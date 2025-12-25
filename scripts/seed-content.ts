@@ -130,9 +130,8 @@ async function ensureBotProfiles(conn: any) {
 }
 
 async function purgeBotPosts(conn: any) {
-    console.log("� PURGING ALL BOT POSTS...");
+    console.log("🔥 PURGING ALL BOT POSTS...");
 
-    // Include current bots AND legacy bots
     const ALL_BOT_IDS = [
         ...Object.values(PERSONAS).map(p => p.id),
         'bot_curator', 'bot_news', 'bot_spark', 'bot_flux'
@@ -160,7 +159,8 @@ async function processDomain(conn: any, domainId: string, limit: number) {
     console.log(`   Processing ${domainId} -> r/${subreddit} [Bot: ${botUser.name}]`);
 
     try {
-        const fetchLimit = limit + 5;
+        // Fetch MORE posts to ensure we can filter down to quality ones
+        const fetchLimit = limit + 15;
         const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
         });
@@ -178,19 +178,39 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             if (postsAdded >= limit) break;
             const post = item.data;
 
-            // 30% IMAGE RULE
+            // -------------------------------------------------------------------------
+            // QUALITY FILTER: "No Small Posts"
+            // -------------------------------------------------------------------------
             const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
-            const wantsImage = Math.random() < 0.30;
-            if (wantsImage && !hasImage) continue;
+
+            let body = post.selftext || '';
+            const isShortText = body.length < 200; // Text must be substantial (>200 chars)
+
+            // RULE: "Prefer content with image"
+            // We boost image probability to 50%
+            const wantsImage = Math.random() < 0.50;
+
+            // LOGIC:
+            // 1. If it wants an image, but post has no image -> SKIP (unless text is GREAT)
+            // 2. If it is a text post, but text is "small" (<200 chars) -> SKIP
+
+            if (wantsImage && !hasImage) {
+                // If we really wanted an image but didn't get one, strict check on text
+                if (isShortText) continue;
+            }
+
+            if (!hasImage && isShortText) {
+                // Skip text-only posts that are too short (one-liners)
+                continue;
+            }
 
             // FORMATTING (Plain Text, No Source, FULL CONTENT)
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
             cleanTitle = cleanTitle.replace(/\*\*/g, '').replace(/\*/g, '').replace(/__/g, '');
 
             let finalContent = `${cleanTitle}`;
-            if (post.selftext) {
-                // Full Content
-                finalContent += `\n\n${post.selftext}`;
+            if (body) {
+                finalContent += `\n\n${body}`;
             }
 
             // IMAGE PROXY (Compression)
@@ -207,7 +227,7 @@ async function processDomain(conn: any, domainId: string, limit: number) {
                     VALUES (?, ?, ?, ?, ?, NOW())
                 `, [postId, botUser.id, domainId, finalContent, imageUrl]);
 
-                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Img: ${!!imageUrl})`);
+                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Img: ${!!imageUrl}, Len: ${body.length})`);
                 postsAdded++;
             } catch (err: any) { }
         }
