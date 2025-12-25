@@ -56,7 +56,31 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           const normalize = (s: string) => s.toLowerCase().trim();
           const target = normalize(domain.id);
           // ALIASING ALGORITHM V2
+          const target = normalize(domain.id);
           const idSet = new Set<string>([target]);
+
+          // HIERARCHY MAPPING (Mirrors Seed Content Logic)
+          // This allows "Science" channel to show "Physics", "Biology", etc. images
+          // without requiring the database ID to be "Science: Physics".
+          const DOMAIN_HIERARCHY: Record<string, string[]> = {
+            'science': ['physics', 'chemistry', 'biology', 'astronomy', 'astrophysics', 'neuroscience', 'geology', 'environment', 'genetics'],
+            'technology': ['tech', 'ai', 'coding', 'software', 'hardware', 'robotics', 'cybersecurity', 'cloud', 'blockchain', 'data science'],
+            'engineering': ['mechanical engineering', 'civil engineering', 'electrical engineering', 'software engineering', 'aerospace engineering', 'chemical engineering'],
+            'business': ['finance', 'marketing', 'entrepreneurship', 'startups', 'economics', 'management'],
+            'art': ['design', 'digital art', 'photography', 'illustration', 'painting'],
+            'mathematics': ['algebra', 'calculus', 'geometry', 'statistics', 'topology', 'number theory'],
+            'space': ['astronomy', 'astrophysics', 'cosmology', 'spaceX', 'nasa'],
+            'nature': ['wildlife', 'botany', 'environment', 'climate'],
+            'health': ['wellness', 'fitness', 'medicine', 'mental health'],
+            'gaming': ['rpg', 'indie', 'pc gaming', 'console', 'esports'],
+          };
+
+          // IF target is a parent (e.g. 'science'), add all children to search
+          if (DOMAIN_HIERARCHY[target]) {
+            DOMAIN_HIERARCHY[target].forEach(child => idSet.add(child));
+          }
+
+          if (target === 'tech') idSet.add('technology');
 
           if (target === 'tech') idSet.add('technology');
           if (target === 'technology') idSet.add('tech');
