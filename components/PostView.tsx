@@ -231,6 +231,24 @@ const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentVie
 
             const userId = user ? user.uid : 'NO_USER';
 
+            // ALIASING ALGORITHM: Handle singular/plural mismatches (e.g. "Art" vs "Arts")
+            // This ensures both "Art" and "Arts" show content from both buckets.
+            const normalize = (s: string) => s.toLowerCase().trim();
+            const target = normalize(domainId);
+
+            const potentialIds = [target];
+
+            // Common aliases map
+            if (target === 'arts') potentialIds.push('art');
+            if (target === 'art') potentialIds.push('arts');
+            if (target === 'sciences') potentialIds.push('science');
+            if (target === 'science') potentialIds.push('sciences');
+            if (target === 'tech') potentialIds.push('technology');
+            if (target === 'technology') potentialIds.push('tech');
+
+            // Construct SQL with dynamic placeholders
+            const placeholders = potentialIds.map(() => '?').join(',');
+
             const sql = `
                 SELECT 
                     p.*, 
@@ -241,11 +259,14 @@ const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentVie
                     EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
                 FROM posts p 
                 LEFT JOIN profiles u ON p.user_id = u.id 
-                WHERE (LOWER(p.domain_id) = LOWER(?) OR LOWER(p.domain_id) LIKE LOWER(CONCAT('%/', ?))) 
+                WHERE LOWER(p.domain_id) IN (${placeholders})
                 ORDER BY p.created_at DESC
             `;
 
-            const rawPosts = await execute(sql, [userId, domainId, domainId]);
+            // Flatten args: [userId, id1, id2, ...]
+            const args = [userId, ...potentialIds];
+
+            const rawPosts = await execute(sql, args);
 
             // We need to fetch comments separately or use JSON_ARRAYAGG if supported.
             // For simplicity, let's just fetch comments for these posts.

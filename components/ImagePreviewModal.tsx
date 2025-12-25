@@ -52,9 +52,21 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
       const fetchUserImages = async () => {
         setIsCheckingImages(true);
         try {
+          // ALIASING ALGORITHM
+          const normalize = (s: string) => s.toLowerCase().trim();
+          const target = normalize(domain.id);
+          const potentialIds = [target];
+
+          if (target === 'arts') potentialIds.push('art');
+          if (target === 'art') potentialIds.push('arts');
+          if (target === 'sciences') potentialIds.push('science');
+          if (target === 'science') potentialIds.push('sciences');
+
+          const placeholders = potentialIds.map(() => '?').join(',');
+
           const res = await execute(
-            `SELECT imageURL FROM posts WHERE domain_id = ? AND imageURL IS NOT NULL AND imageURL != '' ORDER BY created_at DESC LIMIT 10`,
-            [domain.id]
+            `SELECT imageURL FROM posts WHERE LOWER(domain_id) IN (${placeholders}) AND imageURL IS NOT NULL AND imageURL != '' ORDER BY created_at DESC LIMIT 10`,
+            potentialIds
           );
           const images = res.map((r: any) => r.imageURL);
           if (images.length > 0) {
