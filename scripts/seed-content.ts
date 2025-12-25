@@ -263,6 +263,7 @@ async function purgeBotPosts(conn: any) {
 
 async function processDomain(conn: any, domainId: string, limit: number) {
     const subreddits = DOMAIN_MAP[domainId];
+    let successCount = 0;
 
     // 5. Select random sub-domain (Mirror Strategy) or fallback to top-level
     // logic: 70% chance to drill down if sub-domains exist
