@@ -236,15 +236,17 @@ const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentVie
             const normalize = (s: string) => s.toLowerCase().trim();
             const target = normalize(domainId);
 
-            const potentialIds = [target];
+            // ALIASING ALGORITHM V2: Generic
+            const idSet = new Set<string>([target]);
 
-            // Common aliases map
-            if (target === 'arts') potentialIds.push('art');
-            if (target === 'art') potentialIds.push('arts');
-            if (target === 'sciences') potentialIds.push('science');
-            if (target === 'science') potentialIds.push('sciences');
-            if (target === 'tech') potentialIds.push('technology');
-            if (target === 'technology') potentialIds.push('tech');
+            if (target === 'tech') idSet.add('technology');
+            if (target === 'technology') idSet.add('tech');
+            if (target === 'math') idSet.add('mathematics');
+
+            if (target.endsWith('s')) idSet.add(target.slice(0, -1));
+            else idSet.add(target + 's');
+
+            const potentialIds = Array.from(idSet);
 
             // Construct SQL with dynamic placeholders
             const placeholders = potentialIds.map(() => '?').join(',');

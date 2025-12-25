@@ -55,12 +55,16 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           // ALIASING ALGORITHM
           const normalize = (s: string) => s.toLowerCase().trim();
           const target = normalize(domain.id);
-          const potentialIds = [target];
+          // ALIASING ALGORITHM V2
+          const idSet = new Set<string>([target]);
 
-          if (target === 'arts') potentialIds.push('art');
-          if (target === 'art') potentialIds.push('arts');
-          if (target === 'sciences') potentialIds.push('science');
-          if (target === 'science') potentialIds.push('sciences');
+          if (target === 'tech') idSet.add('technology');
+          if (target === 'technology') idSet.add('tech');
+
+          if (target.endsWith('s')) idSet.add(target.slice(0, -1));
+          else idSet.add(target + 's');
+
+          const potentialIds = Array.from(idSet);
 
           const placeholders = potentialIds.map(() => '?').join(',');
 
