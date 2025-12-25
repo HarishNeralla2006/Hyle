@@ -8,28 +8,35 @@ interface TopicSelectorProps {
     onComplete: () => void;
 }
 
-const TOPICS = [
-    { id: 'science', label: 'Science', color: 'from-blue-400 to-cyan-300' },
-    { id: 'physics', label: 'Physics', color: 'from-purple-400 to-indigo-300' },
-    { id: 'chemistry', label: 'Chemistry', color: 'from-green-400 to-emerald-300' },
-    { id: 'business', label: 'Business', color: 'from-amber-400 to-orange-300' },
-    { id: 'technology', label: 'Technology', color: 'from-red-400 to-pink-300' },
-    { id: 'art', label: 'Art', color: 'from-pink-400 to-rose-300' },
-    { id: 'design', label: 'Design', color: 'from-violet-400 to-fuchsia-300' },
-    { id: 'music', label: 'Music', color: 'from-cyan-400 to-blue-300' },
-    { id: 'history', label: 'History', color: 'from-yellow-400 to-amber-300' },
-    { id: 'philosophy', label: 'Philosophy', color: 'from-teal-400 to-green-300' },
-    { id: 'psychology', label: 'Psychology', color: 'from-indigo-400 to-violet-300' },
-    { id: 'coding', label: 'Coding', color: 'from-lime-400 to-green-300' },
-    { id: 'ai', label: 'AI', color: 'from-fuchsia-400 to-purple-300' },
-    { id: 'space', label: 'Space', color: 'from-slate-400 to-gray-300' },
-    { id: 'nature', label: 'Nature', color: 'from-emerald-400 to-green-300' },
-    // Expansion
-    { id: 'gaming', label: 'Gaming', color: 'from-violet-500 to-purple-400' },
-    { id: 'cinema', label: 'Cinema', color: 'from-red-500 to-orange-400' },
-    { id: 'food', label: 'Food', color: 'from-orange-400 to-yellow-300' },
-    { id: 'travel', label: 'Travel', color: 'from-cyan-400 to-sky-300' },
-    { id: 'health', label: 'Health', color: 'from-teal-400 to-emerald-300' },
+{ id: 'science', label: 'Science', color: 'from-blue-500 to-cyan-400' },
+{ id: 'physics', label: 'Physics', color: 'from-violet-500 to-purple-400' },
+{ id: 'chemistry', label: 'Chemistry', color: 'from-emerald-500 to-teal-400' },
+{ id: 'mathematics', label: 'Mathematics', color: 'from-indigo-500 to-blue-400' }, // NEW
+{ id: 'biology', label: 'Biology', color: 'from-green-500 to-lime-400' }, // NEW (Explicit)
+{ id: 'technology', label: 'Technology', color: 'from-fuchsia-500 to-pink-400' },
+{ id: 'engineering', label: 'Engineering', color: 'from-slate-500 to-zinc-400' }, // NEW
+{ id: 'business', label: 'Business', color: 'from-amber-500 to-orange-400' },
+{ id: 'law', label: 'Law', color: 'from-red-800 to-red-600' }, // NEW
+{ id: 'art', label: 'Art', color: 'from-rose-500 to-pink-400' },
+{ id: 'design', label: 'Design', color: 'from-purple-500 to-fuchsia-400' },
+{ id: 'music', label: 'Music', color: 'from-cyan-500 to-blue-400' },
+{ id: 'literature', label: 'Literature', color: 'from-yellow-600 to-amber-500' }, // NEW
+{ id: 'history', label: 'History', color: 'from-orange-500 to-amber-400' },
+{ id: 'philosophy', label: 'Philosophy', color: 'from-teal-600 to-emerald-500' },
+{ id: 'psychology', label: 'Psychology', color: 'from-indigo-600 to-violet-500' },
+{ id: 'social sciences', label: 'Social Sci.', color: 'from-pink-600 to-rose-500' }, // NEW
+{ id: 'education', label: 'Education', color: 'from-sky-500 to-blue-400' }, // NEW
+{ id: 'coding', label: 'Coding', color: 'from-lime-500 to-green-400' },
+{ id: 'ai', label: 'AI', color: 'from-fuchsia-600 to-purple-500' },
+{ id: 'space', label: 'Space', color: 'from-slate-700 to-slate-500' },
+{ id: 'nature', label: 'Nature', color: 'from-green-600 to-emerald-500' },
+{ id: 'environment', label: 'Environment', color: 'from-teal-500 to-green-400' }, // NEW
+// Lifestyle
+{ id: 'gaming', label: 'Gaming', color: 'from-violet-600 to-indigo-500' },
+{ id: 'cinema', label: 'Cinema', color: 'from-red-600 to-orange-500' },
+{ id: 'food', label: 'Food', color: 'from-orange-500 to-yellow-400' },
+{ id: 'travel', label: 'Travel', color: 'from-cyan-500 to-sky-400' },
+{ id: 'health', label: 'Health', color: 'from-teal-500 to-emerald-400' },
 ];
 
 const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
@@ -84,18 +91,25 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
                         <button
                             key={topic.id}
                             onClick={() => toggleTopic(topic.id)}
-                            className={`group relative p-4 rounded-xl border transition-all duration-300 flex flex-col items-center justify-center overflow-hidden h-24 md:h-32 ${isSelected
-                                ? 'border-white/20 bg-white/5 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)]'
-                                : 'border-white/5 bg-transparent hover:border-white/10 hover:bg-white/5'
+                            className={`group relative p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center overflow-hidden h-28 md:h-32 backdrop-blur-sm ${isSelected
+                                ? 'border-white/40 bg-white/10 scale-105 shadow-[0_0_30px_rgba(255,255,255,0.15)] ring-1 ring-white/20'
+                                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 hover:scale-[1.02]'
                                 }`}
                         >
-                            {/* Background Gradient Blob */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${topic.color} opacity-0 transition-opacity duration-500 ${isSelected ? 'opacity-20' : 'group-hover:opacity-10'}`} />
+                            {/* Smart Ambient Glow (Relatable Aura) */}
+                            <div className={`absolute inset-0 bg-gradient-to-br ${topic.color} transition-all duration-500 blur-2xl ${isSelected ? 'opacity-25' : 'opacity-0 group-hover:opacity-10'}`} />
 
-                            {/* Check Icon */}
-                            <div className={`absolute top-2 right-2 transition-transform duration-300 ${isSelected ? 'scale-100' : 'scale-0'}`}>
-                                <div className="bg-white text-black rounded-full p-0.5">
-                                    <CheckIcon className="w-2.5 h-2.5" />
+                            {/* Sharp Gradient Border hint */}
+                            <div className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${topic.color} opacity-0 transition-opacity duration-300 ${isSelected ? 'opacity-100' : 'group-hover:opacity-50'}`} />
+
+                            <span className={`relative z-10 font-medium tracking-wide transition-colors duration-300 ${isSelected ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}>
+                                {topic.label}
+                            </span>
+
+                            {/* Selection Indicator */}
+                            <div className={`absolute top-2 right-2 transition-all duration-300 ${isSelected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gradient-to-br ${topic.color} shadow-lg`}>
+                                    <CheckIcon className="w-3 h-3 text-white" />
                                 </div>
                             </div>
 
