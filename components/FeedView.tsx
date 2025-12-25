@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { PostWithAuthorAndLikes, ViewState, ViewType, Comment } from '../types';
 import { useStatus } from '../contexts/StatusContext';
 import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons';
-import PostView from './PostView'; // We might want to resuse components from PostView or refactor PostCard out.
+import PostView from './PostView';
+import { RichTextRenderer } from './RichTextRenderer';
 // For now, I will duplicate PostCard to be safe and independent, or better yet, refactor PostCard to be exported from PostView.tsx 
 // But viewing PostView.tsx shows PostCard is not exported. I should probably duplicate it for this specific task to avoid touching PostView logic too much and breaking things, 
 // OR I can export it. Let's export it from PostView.tsx in a separate step or just copy it here. 
@@ -124,86 +125,81 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                             <button onClick={onDelete} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-red-400 transition-colors opacity-50 group-hover:opacity-100">
                                 <TrashIcon className="w-4 h-4" />
                             </button>
-// Add import at the top
-import {RichTextRenderer} from './RichTextRenderer';
-
-// ... inside PostCard ...
-
                         )}
                     </div>
+
+                    <div className="pl-1 text-[var(--text-color)] leading-relaxed text-[15px] font-normal tracking-wide">
+                        <RichTextRenderer content={post.content} />
+                    </div>
+
+                    {post.imageURL && (
+                        <div className="mt-4 rounded-xl overflow-hidden border border-white/10 max-h-96 w-full">
+                            <img src={post.imageURL} alt="Post Attachment" className="w-full h-full object-cover" />
+                        </div>
+                    )}
                 </div>
 
-                <div className="pl-1 text-[var(--text-color)] leading-relaxed text-[15px] font-normal tracking-wide">
-                    <RichTextRenderer content={post.content} />
+                <div className="px-4 py-2 md:px-6 md:py-3 bg-[var(--bg-color)]/20 border-t border-[var(--glass-border)] flex items-center space-x-6">
+                    <button onClick={onToggleLike} className={`group/btn flex items-center space-x-2 transition-all ${post.is_liked_by_user ? 'text-pink-500' : 'text-slate-400 hover:text-white'}`}>
+                        <div className={`p-1.5 rounded-full transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'group-hover/btn:bg-white/5'}`}>
+                            <HeartIcon className={`w-4 h-4 transition-transform group-active/btn:scale-125 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                        </div>
+                        <span className="font-mono text-xs font-bold">{post.like_count}</span>
+                    </button>
+
+                    <button onClick={() => setShowComments(!showComments)} className={`group/btn flex items-center space-x-2 transition-colors ${showComments ? 'text-indigo-400' : 'text-slate-400 hover:text-white'}`}>
+                        <div className={`p-1.5 rounded-full transition-colors ${showComments ? 'bg-indigo-500/10' : 'group-hover/btn:bg-white/5'}`}>
+                            <CommentIcon className="w-4 h-4" />
+                        </div>
+                        <span className="font-mono text-xs font-bold">{post.comment_count}</span>
+                    </button>
                 </div>
 
-                {post.imageURL && (
-                    <div className="mt-4 rounded-xl overflow-hidden border border-white/10 max-h-96 w-full">
-                        <img src={post.imageURL} alt="Post Attachment" className="w-full h-full object-cover" />
+                {(showComments || post.comments.length > 0) && (
+                    <div className="bg-[#020203]/50 p-6 border-t border-white/5 shadow-inner">
+                        <div className="space-y-3 mb-6">
+                            {threadedComments.map(comment => (
+                                <CommentCard
+                                    key={comment.id}
+                                    comment={comment}
+                                    onDelete={() => onDeleteComment(comment.id)}
+                                    onReply={(id, username) => { setReplyTo({ id, username }); }}
+                                    onDeleteComment={onDeleteComment}
+                                    currentUserId={currentUserId}
+                                />
+                            ))}
+                        </div>
+
+                        {currentUserId && (
+                            <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
+                                {replyTo && (
+                                    <div className="flex items-center justify-between px-2 text-xs text-indigo-400 mb-1 animate-fade-in-down">
+                                        <span>Replying to @{replyTo.username}</span>
+                                        <button type="button" onClick={() => setReplyTo(null)} className="hover:text-white">Cancel</button>
+                                    </div>
+                                )}
+                                <div className="flex space-x-3 items-end">
+                                    <div className={`flex-1 relative group/input transition-all duration-300 ${replyTo ? 'pl-2 border-l-2 border-indigo-500' : ''}`}>
+                                        <input
+                                            type="text"
+                                            value={commentContent}
+                                            onChange={(e) => setCommentContent(e.target.value)}
+                                            placeholder={replyTo ? `Reply to @${replyTo.username}...` : "Transmit reply..."}
+                                            className="relative w-full bg-[#0a0a10] border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-all placeholder-slate-600"
+                                            autoFocus={!!replyTo}
+                                        />
+                                    </div>
+                                    <button type="submit" disabled={isCommenting || !commentContent.trim()} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 uppercase tracking-wider hover:text-indigo-300">
+                                        {isCommenting ? '...' : 'Send'}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 )}
             </div>
-
-            <div className="px-4 py-2 md:px-6 md:py-3 bg-[var(--bg-color)]/20 border-t border-[var(--glass-border)] flex items-center space-x-6">
-                <button onClick={onToggleLike} className={`group/btn flex items-center space-x-2 transition-all ${post.is_liked_by_user ? 'text-pink-500' : 'text-slate-400 hover:text-white'}`}>
-                    <div className={`p-1.5 rounded-full transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'group-hover/btn:bg-white/5'}`}>
-                        <HeartIcon className={`w-4 h-4 transition-transform group-active/btn:scale-125 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
-                    </div>
-                    <span className="font-mono text-xs font-bold">{post.like_count}</span>
-                </button>
-
-                <button onClick={() => setShowComments(!showComments)} className={`group/btn flex items-center space-x-2 transition-colors ${showComments ? 'text-indigo-400' : 'text-slate-400 hover:text-white'}`}>
-                    <div className={`p-1.5 rounded-full transition-colors ${showComments ? 'bg-indigo-500/10' : 'group-hover/btn:bg-white/5'}`}>
-                        <CommentIcon className="w-4 h-4" />
-                    </div>
-                    <span className="font-mono text-xs font-bold">{post.comment_count}</span>
-                </button>
-            </div>
-
-            {(showComments || post.comments.length > 0) && (
-                <div className="bg-[#020203]/50 p-6 border-t border-white/5 shadow-inner">
-                    <div className="space-y-3 mb-6">
-                        {threadedComments.map(comment => (
-                            <CommentCard
-                                key={comment.id}
-                                comment={comment}
-                                onDelete={() => onDeleteComment(comment.id)}
-                                onReply={(id, username) => { setReplyTo({ id, username }); }}
-                                onDeleteComment={onDeleteComment}
-                                currentUserId={currentUserId}
-                            />
-                        ))}
-                    </div>
-
-                    {currentUserId && (
-                        <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
-                            {replyTo && (
-                                <div className="flex items-center justify-between px-2 text-xs text-indigo-400 mb-1 animate-fade-in-down">
-                                    <span>Replying to @{replyTo.username}</span>
-                                    <button type="button" onClick={() => setReplyTo(null)} className="hover:text-white">Cancel</button>
-                                </div>
-                            )}
-                            <div className="flex space-x-3 items-end">
-                                <div className={`flex-1 relative group/input transition-all duration-300 ${replyTo ? 'pl-2 border-l-2 border-indigo-500' : ''}`}>
-                                    <input
-                                        type="text"
-                                        value={commentContent}
-                                        onChange={(e) => setCommentContent(e.target.value)}
-                                        placeholder={replyTo ? `Reply to @${replyTo.username}...` : "Transmit reply..."}
-                                        className="relative w-full bg-[#0a0a10] border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-all placeholder-slate-600"
-                                        autoFocus={!!replyTo}
-                                    />
-                                </div>
-                                <button type="submit" disabled={isCommenting || !commentContent.trim()} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 uppercase tracking-wider hover:text-indigo-300">
-                                    {isCommenting ? '...' : 'Send'}
-                                </button>
-                            </div>
-                        </form>
-                    )}
-                </div>
-            )}
         </div>
-        </div >
+
     );
 };
 

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { PostWithAuthorAndLikes, ViewState, ViewType, Comment } from '../types';
 import { useStatus } from '../contexts/StatusContext';
 import { HeartIcon, TrashIcon, BackIcon, CommentIcon, ReplyIcon, EditIcon } from './icons';
+import { RichTextRenderer } from './RichTextRenderer';
 
 
 interface PostViewProps {
@@ -128,11 +129,6 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                                     <TrashIcon className="w-4 h-4" />
                                 </button>
                             </div>
-// Add import at the top
-import {RichTextRenderer} from './RichTextRenderer';
-
-// ... inside PostCard standard view ...
-
                         )}
                     </div>
 
@@ -207,7 +203,7 @@ import {RichTextRenderer} from './RichTextRenderer';
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
