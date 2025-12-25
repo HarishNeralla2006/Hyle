@@ -32,7 +32,6 @@ const DOMAIN_MAP: Record<string, string[]> = {
 };
 
 // Thematic Bot Personas "The Sphere Keepers"
-// Each bot has a personality and specific domains they "manage".
 const PERSONAS = {
     'NOVA': { id: 'bot_nova', name: 'Nova', desc: 'The Explorer' },     // Space, Science, Physics
     'PIXEL': { id: 'bot_pixel', name: 'Pixel', desc: 'The Technologist' }, // Tech, Coding, AI, Design
@@ -79,10 +78,16 @@ async function main() {
 
     const conn = connect({ url: process.env.DATABASE_URL });
 
-    // FIX MODE: Update existing posts to use the new personas
-    if (process.argv.includes('--fix')) {
+    // FIX MODE 1: Update existing posts to use the new personas
+    if (process.argv.includes('--fix-personas')) {
         await ensureBotProfiles(conn);
         await fixLegacyPosts(conn);
+        return;
+    }
+
+    // FIX MODE 2: Retroactively compress images
+    if (process.argv.includes('--fix-images')) {
+        await fixLegacyImages(conn);
         return;
     }
 
@@ -97,7 +102,7 @@ async function main() {
 
     console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Bulk: ${isBulk})`);
 
-    // Ensure Bot Profiles Exist (Self-Healing)
+    // Ensure Bot Profiles Exist
     await ensureBotProfiles(conn);
 
     for (const domain of selectedDomains) {
@@ -108,7 +113,6 @@ async function main() {
 }
 
 async function ensureBotProfiles(conn: any) {
-    // Upsert the bot users so they have names/avatars in the DB
     console.log("   Checking Bot Personas...");
     const bots = Object.values(PERSONAS);
 
@@ -121,27 +125,23 @@ async function ensureBotProfiles(conn: any) {
             `, [
                 bot.id,
                 bot.name,
-                `https://api.dicebear.com/7.x/bottts/svg?seed=${bot.name}`, // Free fancy avatars
+                `https://api.dicebear.com/7.x/bottts/svg?seed=${bot.name}`,
                 `I am ${bot.name}, ${bot.desc}. I curate content for Hyle.`,
                 bot.name,
                 `I am ${bot.name}, ${bot.desc}. I curate content for Hyle.`
             ]);
         } catch (e) {
-            // Likely already exists or syntax diff, ignore
+            // Likely already exists, ignore
         }
     }
 }
 
 async function fixLegacyPosts(conn: any) {
     console.log("🛠️ Fixing Legacy Posts (Assigning new Personas)...");
-
-    // Old generic bot IDs to replace
     const OLD_BOT_IDS = ['bot_curator', 'bot_news', 'bot_spark', 'bot_flux'];
 
-    // Iterate over domains and assign the correct bot
     for (const [domain, subreddits] of Object.entries(DOMAIN_MAP)) {
         const targetBot = DOMAIN_BOT_MAP[domain] || PERSONAS.FLUX;
-
         try {
             const query = `
                 UPDATE posts 
@@ -149,93 +149,104 @@ async function fixLegacyPosts(conn: any) {
                 WHERE domain_id = ? 
                 AND user_id IN ('${OLD_BOT_IDS.join("','")}')
            `;
-
             await conn.execute(query, [targetBot.id, domain]);
             console.log(`   ✅ Updated ${domain} -> ${targetBot.name}`);
         } catch (e: any) {
             console.error(`   ❌ Failed to update ${domain}:`, e.message);
         }
     }
-    console.log("✨ Migration Complete.");
+}
+
+async function fixLegacyImages(conn: any) {
+    console.log("🖼️  Retroactively Compressing Bot Images...");
+
+    const BOT_IDS = Object.values(PERSONAS).map(p => p.id);
+    const placeholders = BOT_IDS.map(() => '?').join(',');
+
+    try {
+        // 1. Get all bot posts with images that aren't already proxied
+        const rows = await conn.execute(`
+            SELECT id, imageURL FROM posts 
+            WHERE imageURL IS NOT NULL 
+            AND imageURL NOT LIKE 'https://wsrv.nl%' 
+            AND user_id IN (${placeholders})
+        `, BOT_IDS);
+
+        console.log(`   🔍 Found ${rows.length} uncompressed images.`);
+
+        for (const row of rows) {
+            const originalUrl = row.imageURL;
+            if (!originalUrl) continue;
+
+            const encodedUrl = encodeURIComponent(originalUrl);
+            // 50KB Target: Width 600, Quality 60, WebP
+            const newUrl = `https://wsrv.nl/?url=${encodedUrl}&w=600&q=60&output=webp`;
+
+            await conn.execute('UPDATE posts SET imageURL = ? WHERE id = ?', [newUrl, row.id]);
+            console.log(`      ✨ Compressed: ${row.id}`);
+        }
+        console.log("✅ Image Compression Complete.");
+
+    } catch (e: any) {
+        console.error("❌ Failed to fix images:", e.message);
+    }
 }
 
 async function processDomain(conn: any, domainId: string, limit: number) {
     const subreddits = DOMAIN_MAP[domainId];
     const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
-
-    // Select the correct bot for this domain
     const botUser = DOMAIN_BOT_MAP[domainId] || PERSONAS.FLUX;
 
     console.log(`   Processing ${domainId} -> r/${subreddit} [Bot: ${botUser.name}]`);
 
     try {
-        // Fetch top posts of the day
         const fetchLimit = limit + 5;
         const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
         });
 
-        if (!response.ok) {
-            console.warn(`   ⚠️ Status ${response.status} from Reddit.`);
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
         const posts = data.data.children;
 
-        if (!posts || posts.length === 0) {
-            console.log("   ⚠️ No posts found.");
-            return;
-        }
+        if (!posts || posts.length === 0) return;
 
         let postsAdded = 0;
 
         for (const item of posts) {
             if (postsAdded >= limit) break;
-
             const post = item.data;
 
-            // -------------------------------------------------------------------------
-            // 30% IMAGE / 70% TEXT RULE
-            // -------------------------------------------------------------------------
+            // 30% IMAGE RULE
             const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
             const wantsImage = Math.random() < 0.30;
-
             if (wantsImage && !hasImage) continue;
 
-            // Prepare Data
-            const postId = randomUUID();
-
-            // CLEANUP TITLE
+            // FORMATTING (Plain Text)
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
-
-            // FORMATTING: Plain text only (App doesn't render Markdown)
-            // 1. Title first
-            // 2. Body text (if any)
-            // 3. Source link at the bottom
             let finalContent = `${cleanTitle}`;
-            if (post.selftext) {
-                finalContent += `\n\n${post.selftext}`;
-            }
-            // Add source cleanly
+            if (post.selftext) finalContent += `\n\n${post.selftext}`;
             finalContent += `\n\nSource: https://reddit.com${post.permalink}`;
 
-            const imageUrl = hasImage ? post.url : null;
+            // IMAGE PROXY (Compression)
+            let imageUrl = null;
+            if (hasImage) {
+                const encodedUrl = encodeURIComponent(post.url);
+                imageUrl = `https://wsrv.nl/?url=${encodedUrl}&w=600&q=60&output=webp`;
+            }
 
-            // Insert
+            const postId = randomUUID();
             try {
                 await conn.execute(`
                     INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
                     VALUES (?, ?, ?, ?, ?, NOW())
                 `, [postId, botUser.id, domainId, finalContent, imageUrl]);
 
-                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Image: ${!!imageUrl})`);
+                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Img: ${!!imageUrl})`);
                 postsAdded++;
-            } catch (err: any) {
-                // Ignore errors
-            }
+            } catch (err: any) { }
         }
-
     } catch (e: any) {
         console.error(`   ❌ Error processing ${domainId}:`, e.message);
     }
