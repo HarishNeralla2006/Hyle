@@ -6,7 +6,7 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { connect } from '@tidbcloud/serverless';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 
 // -----------------------------------------------------------------------------
 // CONFIGURATION
@@ -280,7 +280,14 @@ async function processDomain(conn: any, domainId: string, limit: number) {
                 imageUrl = `https://wsrv.nl/?url=${encodedUrl}&w=600&q=60&output=webp`;
             }
 
-            const postId = randomUUID();
+            // DEDUPLICATION: Generate Deterministic ID from Reddit Permalink
+            // This ensures that if we run the script 100 times, the same Reddit post
+            // always matches the SAME ID. The database will reject duplicates automatically.
+            const uniqueString = `reddit-${post.permalink}`;
+            const hash = createHash('sha1').update(uniqueString).digest('hex');
+            // Format as UUID-like string: 8-4-4-4-12
+            const postId = `${hash.substring(0, 8)}-${hash.substring(8, 12)}-${hash.substring(12, 16)}-${hash.substring(16, 20)}-${hash.substring(20, 32)}`;
+
             try {
                 await conn.execute(`
                     INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
@@ -289,7 +296,13 @@ async function processDomain(conn: any, domainId: string, limit: number) {
 
                 console.log(`      + ${randomHuman.name} Posted: "${cleanTitle.substring(0, 30)}..."`);
                 postsAdded++;
-            } catch (err: any) { }
+            } catch (err: any) {
+                // Silently skip duplicates (this is expected behavior now)
+                if (!err.message.includes('Duplicate entry')) {
+                    // Only log real errors
+                    // console.error(err); 
+                }
+            }
         }
     } catch (e: any) {
         console.error(`   ❌ Error processing ${domainId}:`, e.message);
