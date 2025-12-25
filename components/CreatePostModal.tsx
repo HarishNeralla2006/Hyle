@@ -116,48 +116,49 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
         // FIX: Ensure manual posts use the same Composite ID logic as the seeder
         // This ensures posts in 'Cosmology' show up in 'Space' feeds
         const PARENT_MAP: Record<string, string> = {
-            // Science
-            'Physics': 'Science', 'Chemistry': 'Science', 'Biology': 'Science',
-            'Astronomy': 'Science', 'Astrophysics': 'Science',
-            'Neuroscience': 'Biology', 'Genetics': 'Biology', 'Microbiology': 'Biology',
-            'Quantum Mechanics': 'Physics', 'Cosmology': 'Physics', 'Thermodynamics': 'Physics',
-            'Organic Chemistry': 'Chemistry', 'Biochemistry': 'Chemistry',
-
-            // Tech & Eng
-            'Robotics': 'Technology', 'AI': 'Technology', 'Cybersecurity': 'Technology',
-            'Civil Engineering': 'Engineering', 'Mechanical Engineering': 'Engineering', 'Aerospace': 'Engineering',
-
-            // Math
-            'Topology': 'Mathematics', 'Algebra': 'Mathematics', 'Calculus': 'Mathematics', 'Geometry': 'Mathematics',
-
-            // Humanities
-            'History': 'Humanities', 'Philosophy': 'Humanities', 'Literature': 'Humanities',
-            'Stoicism': 'Philosophy', 'Logic': 'Philosophy', 'Ethics': 'Philosophy',
-            'Cognitive': 'Psychology', 'Behavioral': 'Psychology',
-            'Ancient History': 'History', 'Modern History': 'History',
-
-            // Arts
-            'Digital Art': 'Art', 'Painting': 'Art', 'Sculpture': 'Art',
-            'Graphic Design': 'Design', 'UI/UX': 'Design', 'Product Design': 'Design',
-
-            // Lifestyle
-            'Startup': 'Business', 'Economics': 'Business', 'Finance': 'Business',
-            'Indie': 'Gaming', 'RPG': 'Gaming', 'Esports': 'Gaming',
-            'Movies': 'Cinema', 'Documentary': 'Cinema',
-            'Wellness': 'Health', 'Fitness': 'Health', 'Nutrition': 'Health',
-            'Botany': 'Nature', 'Wildlife': 'Nature', 'Conservation': 'Nature',
-            'Climate': 'Environment', 'Sustainability': 'Environment'
+            'Cosmology': 'Space',
+            'Astronomy': 'Space',
+            'Neuroscience': 'Biology',
+            'Genetics': 'Biology',
+            'Topology': 'Mathematics',
+            'Algebra': 'Mathematics',
+            'Civil Engineering': 'Engineering',
+            'Startup': 'Business',
+            'Stoicism': 'Philosophy',
+            'Logic': 'Philosophy',
+            'Cognitive': 'Psychology',
+            'Indie': 'Gaming',
+            'RPG': 'Gaming',
+            'Movies': 'Cinema',
+            'Wellness': 'Health',
+            'Fitness': 'Health',
+            'Botany': 'Nature',
+            'Wildlife': 'Nature',
+            'Climate': 'Environment',
         };
 
+        // Aggressively normalize to "Parent: Child" format to match Seeder
         let finalDomainId = selectedDomain.id;
-        // Check if the selected ID is a raw sub-domain that needs parenting
-        // We strip any existing parent prefix first just in case
-        const rawId = selectedDomain.id.split(':').pop()?.trim() || selectedDomain.id;
 
-        if (PARENT_MAP[rawId]) {
-            finalDomainId = `${PARENT_MAP[rawId]}: ${rawId}`;
-        } else if (PARENT_MAP[selectedDomain.name]) {
-            finalDomainId = `${PARENT_MAP[selectedDomain.name]}: ${selectedDomain.name}`;
+        // Use the displayed Name (Leaf) for lookup, not the long path ID
+        const leafName = selectedDomain.name;
+
+        if (PARENT_MAP[leafName]) {
+            finalDomainId = `${PARENT_MAP[leafName]}: ${leafName}`;
+        } else {
+            // If not in special parent map, prefer the Leaf Name if the ID is a long path
+            // This avoids "SparkSphere/Science/Physics" mismatching simple "Physics" queries if strict
+            // But actually, "Science/Physics" matches LIKE %Physics%.
+            // Let's stick to the ID unless we have a parent map override.
+
+            // BUT, if the ID is "Science/Physics", and the seeder just uses "Physics".
+            // We should probably normalize to "Physics" to be consistent?
+            // Seeder uses: 'Physics' (Top Level) or 'Space: Cosmology' (Sub).
+            // It does NOT use slashes.
+            // Manual posts should probably follow suit.
+            if (selectedDomain.id.includes('/')) {
+                finalDomainId = leafName; // Flatten it
+            }
         }
 
         setIsPosting(true);
