@@ -66,11 +66,14 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
 
           const potentialIds = Array.from(idSet);
 
-          const placeholders = potentialIds.map(() => '?').join(',');
+          // FIX: Use LIKE to match composite IDs (e.g. 'Science: Biology' should match 'biology')
+          // Construct: (LOWER(domain_id) LIKE ? OR LOWER(domain_id) LIKE ?)
+          const conditions = potentialIds.map(() => `LOWER(domain_id) LIKE ?`).join(' OR ');
+          const params = potentialIds.map(id => `%${id}%`);
 
           const res = await execute(
-            `SELECT imageURL FROM posts WHERE LOWER(domain_id) IN (${placeholders}) AND imageURL IS NOT NULL AND imageURL != '' ORDER BY created_at DESC LIMIT 10`,
-            potentialIds
+            `SELECT imageURL FROM posts WHERE (${conditions}) AND imageURL IS NOT NULL AND imageURL != '' ORDER BY created_at DESC LIMIT 10`,
+            params
           );
           const images = res.map((r: any) => r.imageURL);
           if (images.length > 0) {
