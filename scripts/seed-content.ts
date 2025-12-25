@@ -263,6 +263,75 @@ async function purgeBotPosts(conn: any) {
 
 async function processDomain(conn: any, domainId: string, limit: number) {
     const subreddits = DOMAIN_MAP[domainId];
+
+    // 5. Select random sub-domain (Mirror Strategy) or fallback to top-level
+    // logic: 70% chance to drill down if sub-domains exist
+    let domain = domainId; // Default to 'science'
+    let chosenSub = '';
+
+    // Check if we have mapped sub-spheres for this top-level domain
+    // We need to find keys in DOMAIN_MAP that conceptually belong to this top-level
+    // The current map structure separates them. We need a heuristic.
+    // Heuristic: Check if the top-level key has a capitalized version in the sub-list? 
+    // Actually, the previous logic was just picking from the flat DOMAIN_MAP. 
+    // We need to know the Parent -> Child relationship to enforce the key.
+
+    // AUTO-DISCOVERY FIX: Ensure domainId contains the parent search term
+    // The user iterates keys of DOMAIN_MAP. 'domain' is e.g. 'physics'.
+    // We want to pick a specific sub-topic if possible.
+
+    // Let's create a reverse lookup or just a manual list for the massive mirror map?
+    // No, let's use the 'Priority First' logic but ensure the ID includes the parent.
+
+    // Actually, the loop at line 124 iterates ALL keys. 
+    // If we are processing 'Astrophysics' (Capitalized), we don't know it belongs to 'Physics'.
+    // BUT, the Feed Query relies on 'physics' (lowercase).
+    // 'Astrophysics' contains 'physics'. It works.
+    // 'Cosmology' does NOT. 
+
+    // We need a mapping of Orphan -> Parent.
+    const PARENT_MAP: Record<string, string> = {
+        'Cosmology': 'Space',
+        'Astronomy': 'Space',
+        'Neuroscience': 'Biology',
+        'Genetics': 'Biology',
+        'Topology': 'Mathematics',
+        'Algebra': 'Mathematics',
+        'Civil Engineering': 'Engineering', // 'Engineering' is inside strings
+        'Startup': 'Business',
+        'Stoicism': 'Philosophy',
+        'Logic': 'Philosophy',
+        'Cognitive': 'Psychology',
+        'Indie': 'Gaming',
+        'RPG': 'Gaming',
+        'Movies': 'Cinema',
+        'Wellness': 'Health',
+        'Fitness': 'Health',
+        'Botany': 'Nature',
+        'Wildlife': 'Nature',
+        'Climate': 'Environment',
+        // Add other orphans as needed
+    };
+
+    // If the current domain key is in our orphan map, prepend the parent!
+    // e.g. 'Cosmology' -> 'Space: Cosmology'
+    let finalDomainId = domain;
+
+    // Check if this domain is a sub-domain that needs parenting
+    // We need to look at the strings.
+
+    // SIMPLER FIX: 
+    // If this is a specific sub-domain (Capitalized) and it doesn't contain a likely parent keyword,
+    // we prepend a smart tag. 
+    // Actually, let's just use the PARENT_MAP for the known problem children.
+    if (PARENT_MAP[domain]) {
+        finalDomainId = `${PARENT_MAP[domain]}: ${domain}`;
+    }
+
+    // Also handle the Priority Queue logic from before
+    const isPriority = /^[A-Z]/.test(domain);
+
+    // Fetch posts
     const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
 
     // ROTATE SORT METHOD: Mix of 'hot', 'new', and 'top' for variety
@@ -270,7 +339,7 @@ async function processDomain(conn: any, domainId: string, limit: number) {
     const mode = modes[Math.floor(Math.random() * modes.length)];
     const timeRange = mode === 'top' ? (Math.random() > 0.5 ? 'week' : 'month') : 'day'; // If top, look further back
 
-    console.log(`   Processing ${domainId} -> r/${subreddit} (${mode}/${timeRange})`);
+    console.log(`   Processing ${finalDomainId} -> r/${subreddit} (${mode}/${timeRange})`);
 
     try {
         const fetchLimit = limit + 50; // Increased buffer
@@ -336,10 +405,10 @@ async function processDomain(conn: any, domainId: string, limit: number) {
                 await conn.execute(`
                     INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
                     VALUES (?, ?, ?, ?, ?, NOW())
-                `, [postId, randomHuman.id, domainId, finalContent, imageUrl]);
+                `, [postId, randomHuman.id, finalDomainId, finalContent, imageUrl]);
 
-                console.log(`      + ${randomHuman.name} Posted: "${cleanTitle.substring(0, 30)}..."`);
-                postsAdded++;
+                console.log(`   -> SQL: Inserted post ${postId} for ${finalDomainId}`);
+                successCount++;
             } catch (err: any) {
                 // Silently skip duplicates (this is expected behavior now)
                 if (!err.message.includes('Duplicate entry')) {
