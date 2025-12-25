@@ -115,86 +115,29 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
 
         // FIX: Ensure manual posts use the same Composite ID logic as the seeder
         // This ensures posts in 'Cosmology' show up in 'Space' feeds
-        const PARENT_MAP: Record<string, string> = {
-            'Cosmology': 'Space',
-            'Genetics': 'Biology',
-            // Startup is tricky. Seeder has 'Entrepreneurship' as key. 'Startup' -> 'Business' in seeder map.
-            // So Startup -> Business is correct.
-            'Startup': 'Business',
-            'Stoicism': 'Philosophy',
-            'Logic': 'Philosophy',
-            'Cognitive': 'Psychology',
-            'Indie': 'Gaming',
-            'RPG': 'Gaming',
-            'Movies': 'Cinema',
-            'Wellness': 'Health',
-            'Fitness': 'Health',
-            'Botany': 'Nature',
-            'Wildlife': 'Nature',
-            'Climate': 'Environment',
-        };
+        // UNIVERSAL FLAT ID STRATEGY
+        // We do NOT use "Parent: Child" prefixes anymore.
+        // All IDs are single words (Title Case preferred for display consistency).
+        // e.g. "Space/Cosmology" -> "Cosmology"
+        // e.g. "Physics" -> "Physics"
 
-        // EXTRACTED FROM SEEDER: Keys that are "Top Level" (Bot posts directly to these)
-        // We must NEVER prepend a parent to these.
-        const TOP_LEVEL_KEYS = new Set([
-            'Science', 'Physics', 'Chemistry', 'Business', 'Technology', 'Art', 'Design', 'Music', 'History', 'Philosophy', 'Psychology', 'Coding', 'Ai', 'Space', 'Nature', 'Mathematics', 'Law', 'Environment', 'Literature', 'Engineering', 'Education', 'Social Sciences',
-            'Astronomy', 'Astrophysics', 'Biology', 'Neuroscience', 'Quantum Mechanics', 'Computer Science', 'Earth Science', 'Geophysics', 'Molecular Biology', 'Organic Chemistry', 'Environmental Science', 'Ecology',
-            'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Software Engineering', 'Aerospace Engineering', 'Chemical Engineering', 'Biomedical Engineering', 'Environmental Engineering',
-            'Marketing', 'Finance', 'International Business', 'Human Resources', 'Operations Management', 'Supply Chain Management', 'Entrepreneurship', 'Business Analytics',
-            'Artificial Intelligence', 'Data Science', 'Cybersecurity', 'Cloud Computing', 'Blockchain', 'Internet of Things', 'Robotics', 'Augmented Reality', 'Quantum Computing',
-            'Algebra', 'Calculus', 'Geometry', 'Statistics', 'Probability', 'Number Theory', 'Combinatorics', 'Topology', 'Analysis',
-            'Digital Art', 'Photography', 'Web Development', 'Game Development', 'PC Gaming', 'Indie Games', 'Virtual Reality'
-        ]);
+        const leafName = selectedDomain.name.trim();
 
-        // Aggressively normalize to "Parent: Child" format to match Seeder
-        let finalDomainId = selectedDomain.id;
-
-        // Use the displayed Name (Leaf) for lookup, not the long path ID
-        const leafName = selectedDomain.name;
-
-        // NORMALIZE LEAF NAME (Title Case for comparison)
+        // NORMALIZE LEAF NAME (Title Case)
         // e.g. "physics" -> "Physics"
         const normalizedLeaf = leafName.charAt(0).toUpperCase() + leafName.slice(1);
 
-        // 1. CHECK IF IT IS A TOP LEVEL KEY ITSELF
-        // If so, use the normalized name DIRECTLY. No Parent.
-        // We case-insensitive check against the Set.
-        let matchKey: string | undefined;
-        for (const key of TOP_LEVEL_KEYS) {
-            if (key.toLowerCase() === normalizedLeaf.toLowerCase()) {
-                matchKey = key;
-                break;
-            }
-        }
+        // UNIVERSAL FLAT ID STRATEGY
+        // Always use the normalized leaf name. No prefixes.
+        // e.g. "Science/Physics" -> "Physics"
+        // e.g. "Physics: Relativity" -> "Relativity"
+        let finalDomainId = normalizedLeaf;
 
-        if (matchKey) {
-            finalDomainId = matchKey; // Force "Physics", "Topology", "Artificial Intelligence"
-        } else if (PARENT_MAP[leafName]) {
-            // 2. CHECK EXPLICIT PARENT MAPPING
-            finalDomainId = `${PARENT_MAP[leafName]}: ${leafName}`;
-        } else {
-            // 3. FALLBACK: Flatten path if exists
-            if (selectedDomain.id.includes('/')) {
-                finalDomainId = leafName; // Flatten "Science/SomethingNew" -> "SomethingNew"
-            }
-        }
-
-        if (PARENT_MAP[leafName]) {
-            finalDomainId = `${PARENT_MAP[leafName]}: ${leafName}`;
-        } else {
-            // If not in special parent map, prefer the Leaf Name if the ID is a long path
-            // This avoids "SparkSphere/Science/Physics" mismatching simple "Physics" queries if strict
-            // But actually, "Science/Physics" matches LIKE %Physics%.
-            // Let's stick to the ID unless we have a parent map override.
-
-            // BUT, if the ID is "Science/Physics", and the seeder just uses "Physics".
-            // We should probably normalize to "Physics" to be consistent?
-            // Seeder uses: 'Physics' (Top Level) or 'Space: Cosmology' (Sub).
-            // It does NOT use slashes.
-            // Manual posts should probably follow suit.
-            if (selectedDomain.id.includes('/')) {
-                finalDomainId = leafName; // Flatten it
-            }
+        // If the ID contains slashes, we definitely want the leaf.
+        if (selectedDomain.id.includes('/')) {
+            const parts = selectedDomain.id.split('/');
+            const lastPart = parts[parts.length - 1];
+            finalDomainId = lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
         }
 
         setIsPosting(true);

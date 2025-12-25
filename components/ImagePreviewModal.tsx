@@ -63,15 +63,23 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           // without requiring the database ID to be "Science: Physics".
           const DOMAIN_HIERARCHY: Record<string, string[]> = {
             'science': ['physics', 'chemistry', 'biology', 'astronomy', 'astrophysics', 'neuroscience', 'geology', 'environment', 'genetics'],
-            'technology': ['tech', 'ai', 'coding', 'software', 'hardware', 'robotics', 'cybersecurity', 'cloud', 'blockchain', 'data science'],
-            'engineering': ['mechanical engineering', 'civil engineering', 'electrical engineering', 'software engineering', 'aerospace engineering', 'chemical engineering'],
-            'business': ['finance', 'marketing', 'entrepreneurship', 'startups', 'economics', 'management'],
-            'art': ['design', 'digital art', 'photography', 'illustration', 'painting'],
-            'mathematics': ['algebra', 'calculus', 'geometry', 'statistics', 'topology', 'number theory'],
-            'space': ['astronomy', 'astrophysics', 'cosmology', 'spaceX', 'nasa'],
-            'nature': ['wildlife', 'botany', 'environment', 'climate'],
-            'health': ['wellness', 'fitness', 'medicine', 'mental health'],
-            'gaming': ['rpg', 'indie', 'pc gaming', 'console', 'esports'],
+            'physics': ['astrophysics', 'quantum', 'mechanics', 'relativity', 'thermodynamics', 'particle physics', 'quantum mechanics'],
+            'chemistry': ['organic', 'reactions', 'chemical engineering', 'organic chemistry', 'biochemistry'],
+            'biology': ['genetics', 'neuro', 'marine', 'neuroscience', 'molecular biology', 'microbiology'],
+            'technology': ['tech', 'ai', 'coding', 'software', 'hardware', 'robotics', 'cybersecurity', 'cloud', 'blockchain', 'data science', 'iot'],
+            'engineering': ['mechanical engineering', 'civil engineering', 'electrical engineering', 'software engineering', 'aerospace engineering', 'chemical engineering', 'civil', 'mech', 'aero'],
+            'business': ['finance', 'marketing', 'entrepreneurship', 'startups', 'economics', 'management', 'startup', 'human resources'],
+            'art': ['design', 'digital art', 'photography', 'illustration', 'painting', 'history', 'modern', 'digital'],
+            'mathematics': ['algebra', 'calculus', 'geometry', 'statistics', 'topology', 'number theory', 'logic', 'chaos', 'analysis'],
+            'space': ['astronomy', 'astrophysics', 'cosmology', 'spacex', 'nasa', 'cosmos'],
+            'nature': ['wildlife', 'botany', 'environment', 'climate', 'earth'],
+            'health': ['wellness', 'fitness', 'medicine', 'mental health', 'med'],
+            'gaming': ['rpg', 'indie', 'pc gaming', 'console', 'esports', 'indie games'],
+            'philosophy': ['stoic', 'logic', 'ethics', 'stoicism', 'existentialism'],
+            'psychology': ['cognitive', 'social', 'neuro', 'neuropsychology'],
+            'history': ['ancient', 'wars', 'culture'],
+            'music': ['electronic', 'jazz', 'production'],
+            'literature': ['classics', 'poetry', 'scifi', 'books'],
           };
 
           // IF target is a parent (e.g. 'science'), add all children to search
