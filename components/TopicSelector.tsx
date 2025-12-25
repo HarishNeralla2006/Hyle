@@ -137,19 +137,10 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
                                 {topic.label}
                             </span>
 
-                            {/* Intelligent Sub-Tags Footer */}
-                            <div className={`absolute bottom-3 w-full flex justify-center gap-1.5 transition-opacity duration-500 ${isSelected ? 'opacity-80' : 'opacity-40 group-hover:opacity-70'}`}>
-                                {topic.tags?.slice(0, 3).map((tag, i) => (
-                                    <span key={i} className="text-[9px] uppercase font-mono tracking-widest text-slate-300 animate-pulse">
-                                        {tag}{i < 2 ? <span className="text-slate-500 mx-0.5">•</span> : ''}
-                                    </span>
-                                ))}
-                            </div>
-
                             {/* Selection Indicator */}
-                            <div className={`absolute top-2 right-2 transition-all duration-300 ${isSelected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gradient-to-br ${topic.color} shadow-lg`}>
-                                    <CheckIcon className="w-3 h-3 text-white" />
+                            <div className={`absolute top-3 right-3 transition-all duration-300 ${isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br ${topic.color} shadow-lg ring-2 ring-black/20`}>
+                                    <CheckIcon className="w-3.5 h-3.5 text-white" />
                                 </div>
                             </div>
                         </button>
