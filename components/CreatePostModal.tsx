@@ -118,6 +118,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
         const PARENT_MAP: Record<string, string> = {
             'Cosmology': 'Space',
             'Genetics': 'Biology',
+            // Startup is tricky. Seeder has 'Entrepreneurship' as key. 'Startup' -> 'Business' in seeder map.
+            // So Startup -> Business is correct.
             'Startup': 'Business',
             'Stoicism': 'Philosophy',
             'Logic': 'Philosophy',
@@ -132,11 +134,50 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
             'Climate': 'Environment',
         };
 
+        // EXTRACTED FROM SEEDER: Keys that are "Top Level" (Bot posts directly to these)
+        // We must NEVER prepend a parent to these.
+        const TOP_LEVEL_KEYS = new Set([
+            'Science', 'Physics', 'Chemistry', 'Business', 'Technology', 'Art', 'Design', 'Music', 'History', 'Philosophy', 'Psychology', 'Coding', 'Ai', 'Space', 'Nature', 'Mathematics', 'Law', 'Environment', 'Literature', 'Engineering', 'Education', 'Social Sciences',
+            'Astronomy', 'Astrophysics', 'Biology', 'Neuroscience', 'Quantum Mechanics', 'Computer Science', 'Earth Science', 'Geophysics', 'Molecular Biology', 'Organic Chemistry', 'Environmental Science', 'Ecology',
+            'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Software Engineering', 'Aerospace Engineering', 'Chemical Engineering', 'Biomedical Engineering', 'Environmental Engineering',
+            'Marketing', 'Finance', 'International Business', 'Human Resources', 'Operations Management', 'Supply Chain Management', 'Entrepreneurship', 'Business Analytics',
+            'Artificial Intelligence', 'Data Science', 'Cybersecurity', 'Cloud Computing', 'Blockchain', 'Internet of Things', 'Robotics', 'Augmented Reality', 'Quantum Computing',
+            'Algebra', 'Calculus', 'Geometry', 'Statistics', 'Probability', 'Number Theory', 'Combinatorics', 'Topology', 'Analysis',
+            'Digital Art', 'Photography', 'Web Development', 'Game Development', 'PC Gaming', 'Indie Games', 'Virtual Reality'
+        ]);
+
         // Aggressively normalize to "Parent: Child" format to match Seeder
         let finalDomainId = selectedDomain.id;
 
         // Use the displayed Name (Leaf) for lookup, not the long path ID
         const leafName = selectedDomain.name;
+
+        // NORMALIZE LEAF NAME (Title Case for comparison)
+        // e.g. "physics" -> "Physics"
+        const normalizedLeaf = leafName.charAt(0).toUpperCase() + leafName.slice(1);
+
+        // 1. CHECK IF IT IS A TOP LEVEL KEY ITSELF
+        // If so, use the normalized name DIRECTLY. No Parent.
+        // We case-insensitive check against the Set.
+        let matchKey: string | undefined;
+        for (const key of TOP_LEVEL_KEYS) {
+            if (key.toLowerCase() === normalizedLeaf.toLowerCase()) {
+                matchKey = key;
+                break;
+            }
+        }
+
+        if (matchKey) {
+            finalDomainId = matchKey; // Force "Physics", "Topology", "Artificial Intelligence"
+        } else if (PARENT_MAP[leafName]) {
+            // 2. CHECK EXPLICIT PARENT MAPPING
+            finalDomainId = `${PARENT_MAP[leafName]}: ${leafName}`;
+        } else {
+            // 3. FALLBACK: Flatten path if exists
+            if (selectedDomain.id.includes('/')) {
+                finalDomainId = leafName; // Flatten "Science/SomethingNew" -> "SomethingNew"
+            }
+        }
 
         if (PARENT_MAP[leafName]) {
             finalDomainId = `${PARENT_MAP[leafName]}: ${leafName}`;
