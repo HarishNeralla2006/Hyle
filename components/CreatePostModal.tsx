@@ -113,18 +113,53 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
         e.preventDefault();
         if ((!postContent.trim() && !postImage) || !selectedDomain || !user) return;
 
+        // FIX: Ensure manual posts use the same Composite ID logic as the seeder
+        // This ensures posts in 'Cosmology' show up in 'Space' feeds
+        const PARENT_MAP: Record<string, string> = {
+            'Cosmology': 'Space',
+            'Astronomy': 'Space',
+            'Neuroscience': 'Biology',
+            'Genetics': 'Biology',
+            'Topology': 'Mathematics',
+            'Algebra': 'Mathematics',
+            'Civil Engineering': 'Engineering',
+            'Startup': 'Business',
+            'Stoicism': 'Philosophy',
+            'Logic': 'Philosophy',
+            'Cognitive': 'Psychology',
+            'Indie': 'Gaming',
+            'RPG': 'Gaming',
+            'Movies': 'Cinema',
+            'Wellness': 'Health',
+            'Fitness': 'Health',
+            'Botany': 'Nature',
+            'Wildlife': 'Nature',
+            'Climate': 'Environment',
+        };
+
+        let finalDomainId = selectedDomain.id;
+        // Check if the selected ID is a raw sub-domain that needs parenting
+        // We strip any existing parent prefix first just in case
+        const rawId = selectedDomain.id.split(':').pop()?.trim() || selectedDomain.id;
+
+        if (PARENT_MAP[rawId]) {
+            finalDomainId = `${PARENT_MAP[rawId]}: ${rawId}`;
+        } else if (PARENT_MAP[selectedDomain.name]) {
+            finalDomainId = `${PARENT_MAP[selectedDomain.name]}: ${selectedDomain.name}`;
+        }
+
         setIsPosting(true);
         try {
             if (isEditing && initialPost) {
                 await execute(
                     'UPDATE posts SET content = ?, imageURL = ?, domain_id = ? WHERE id = ?',
-                    [postContent.trim(), postImage || null, selectedDomain.id, initialPost.id]
+                    [postContent.trim(), postImage || null, finalDomainId, initialPost.id]
                 );
             } else {
                 const newId = crypto.randomUUID();
                 await execute(
                     'INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-                    [newId, user.uid, selectedDomain.id, postContent.trim(), postImage || null, new Date().toISOString()]
+                    [newId, user.uid, finalDomainId, postContent.trim(), postImage || null, new Date().toISOString()]
                 );
             }
 
