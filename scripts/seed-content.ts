@@ -188,13 +188,7 @@ async function fixLegacyImages(conn: any) {
 }
 
 async function fixLegacyContent(conn: any) {
-    console.log("📝 Refining Content Style (Removing Sources, Increasing Length)...");
-
-    // NOTE: For existing posts, we ONLY have the truncated/modified content in TiDB. 
-    // We CANNOT magically "expand" them back to full Reddit posts without re-fetching from source.
-    // However, since we don't store the original Source URL anymore (we deleted it!), 
-    // we can only clean up formatting here. 
-    // For *NEW* posts via `processDomain`, we will use the larger limit.
+    console.log("📝 Refining Content Style (Removing Sources, Full Length)...");
 
     const BOT_IDS = Object.values(PERSONAS).map(p => p.id);
     const placeholders = BOT_IDS.map(() => '?').join(',');
@@ -219,8 +213,9 @@ async function fixLegacyContent(conn: any) {
             // 2. Remove any remaining raw markdown artifacts
             content = content.replace(/\*\*/g, '').replace(/__/g, '');
 
-            // 3. Ensure we don't have ellipses if it's short, but we can't un-truncate old posts
-            // without new data. We just accept them as is for now, but strict clean.
+            // 3. NO TRUNCATION - We keep existing text as is.
+            // We cannot recover "lost" text from previous truncations since we deleted source links.
+            // But we ensure we don't truncate any "full" texts that might exist.
 
             if (content !== originalContent) {
                 await conn.execute('UPDATE posts SET content = ? WHERE id = ?', [content, row.id]);
@@ -265,24 +260,15 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             const wantsImage = Math.random() < 0.30;
             if (wantsImage && !hasImage) continue;
 
-            // FORMATTING (Plain Text, No Source, LARGER CONTENT)
+            // FORMATTING (Plain Text, No Source, FULL CONTENT)
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
             cleanTitle = cleanTitle.replace(/\*\*/g, '').replace(/\*/g, '').replace(/__/g, '');
 
             let finalContent = `${cleanTitle}`;
             if (post.selftext) {
-                let body = post.selftext;
-                // INCREASED LIMIT: 800 chars (approx 100-150 words) - "Bigger"
-                if (body.length > 800) {
-                    // Try to cut at end of sentence
-                    let cut = body.substring(0, 800);
-                    const lastPeriod = cut.lastIndexOf('.');
-                    if (lastPeriod > 100) {
-                        cut = cut.substring(0, lastPeriod + 1);
-                    }
-                    body = cut + '...';
-                }
-                finalContent += `\n\n${body}`;
+                // NO LIMITS: We use the full selftext from Reddit
+                // Just minimal cleanup if needed
+                finalContent += `\n\n${post.selftext}`;
             }
             // NO SOURCE LINK ADDED
 
