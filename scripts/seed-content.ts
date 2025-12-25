@@ -14,15 +14,16 @@ import { randomUUID } from 'crypto';
 
 // Map Spark Domains to Subreddits
 // NOTE: Keys MUST match the ID in TopicSelector.tsx (Singular mostly)
-// Map Spark Domains to Subreddits (Wide Net Strategy)
+// Map Spark Domains to Subreddits (Mirror Strategy)
 const DOMAIN_MAP: Record<string, string[]> = {
+    // --- TOP LEVEL SPHERES ---
     'science': ['science', 'EverythingScience', 'biology', 'space', 'Physics'],
     'physics': ['Physics', 'astrophysics', 'QuantumPhysics', 'Cosmology'],
     'chemistry': ['chemistry', 'ChemicalEngineering', 'chemhelp'],
     'business': ['business', 'startups', 'economics', 'finance', 'Entrepreneur'],
     'technology': ['technology', 'gadgets', 'futurology', 'hardware', 'tech'],
     'art': ['Art', 'DigitalArt', 'Museum', 'ConceptArt', 'Illustration', 'Oilpainting', 'StreetArt'],
-    'design': ['Design', 'web_design', 'graphic_design', 'UI_Design', 'userexperience', 'architecture'],
+    'design': ['Design', 'web_design', 'graphic_design', 'UI_Design', 'userexperience'],
     'music': ['Music', 'ListenToThis', 'WeAreTheMusicMakers', 'ElectronicMusic', 'Jazz'],
     'history': ['history', 'AskHistorians', '100yearsago', 'HistoryPorn', 'ArtefactPorn'],
     'philosophy': ['philosophy', 'Stoicism', 'Existentialism', 'PhilosophyofScience'],
@@ -31,12 +32,50 @@ const DOMAIN_MAP: Record<string, string[]> = {
     'ai': ['artificial', 'MachineLearning', 'OpenAI', 'Singularity', 'ArtificialInteligence'],
     'space': ['space', 'nasa', 'SpaceX', 'astronomy', 'Astrophotography'],
     'nature': ['nature', 'EarthPorn', 'wildlife', 'botany', 'NatureIsFuckingLit'],
-    // New Expansion
-    'gaming': ['gaming', 'Games', 'pcgaming', 'IndieGaming', 'RetroGaming'],
-    'cinema': ['movies', 'cinema', 'Film', 'MovieDetails', 'TrueFilm'],
-    'food': ['food', 'FoodPorn', 'Cooking', 'Baking', 'Eats'],
-    'travel': ['travel', 'TravelNoPics', 'solotravel', 'backpacking', 'Shoestring'],
-    'health': ['health', 'Fitness', 'nutrition', 'HealthyFood', 'running'],
+
+    // --- SUB-SPHERE MIRRORS (Drill-down content) ---
+    // Science Subs
+    'Astrophysics': ['astrophysics', 'Cosmology', 'Space'],
+    'Neuroscience': ['Neuroscience', 'brain', 'CognitiveScience'],
+    'Quantum Mechanics': ['QuantumPhysics', 'QuantumMechanics'],
+    'Genetics': ['genetics', 'Genomics'],
+    'Ecology': ['ecology', 'environment', 'conservation'],
+
+    // Tech Subs
+    'Robotics': ['robotics', 'shittyrobots'],
+    'Cybersecurity': ['cybersecurity', 'netsec', 'hacking'],
+    'Virtual Reality': ['virtualreality', 'oculus', 'Vive'],
+    'Blockchain': ['Blockchain', 'CryptoCurrency', 'Ethereum'],
+
+    // Art Subs
+    'Digital Art': ['DigitalArt', 'ConceptArt', 'PixelArt'],
+    'Photography': ['photography', 'itookapicture', 'Analog'],
+    'Architecture': ['architecture', 'ArchitecturePorn'],
+    'Street Art': ['StreetArt', 'Graffiti'],
+
+    // History Subs
+    'Ancient History': ['AncientHistory', 'Archaeology'],
+    'Military History': ['MilitaryHistory', 'CombatFootage'],
+
+    // Coding Subs
+    'Web Development': ['webdev', 'Frontend', 'reactjs', 'css'],
+    'Game Development': ['gamedev', 'Unity3D', 'unrealengine'],
+    'Data Science': ['datascience', 'dataisbeautiful', 'MachineLearning'],
+
+    // New Categories Subs
+    'PC Gaming': ['pcgaming', 'Steam', 'buildapc'],
+    'Indie Games': ['IndieGaming', 'indiegames'],
+    'Horror Movies': ['horror', 'creepy'],
+    'Sci-Fi': ['scifi', 'ScienceFiction'],
+    'Nutrition': ['nutrition', 'HealthyFood', 'eatcheapandhealthy'],
+    'Backpacking': ['backpacking', 'solotravel', 'camping'],
+
+    // Standard High-Level
+    'gaming': ['gaming', 'Games', 'pcgaming', 'IndieGaming'],
+    'cinema': ['movies', 'cinema', 'Film', 'MovieDetails'],
+    'food': ['food', 'FoodPorn', 'Cooking', 'Baking'],
+    'travel': ['travel', 'TravelNoPics', 'solotravel'],
+    'health': ['health', 'Fitness', 'nutrition'],
 };
 
 // "Real Person" User Pool
