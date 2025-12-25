@@ -108,10 +108,10 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
                             </span>
 
                             {/* Intelligent Sub-Tags Footer */}
-                            <div className="relative z-10 w-full flex justify-center gap-1 opacity-60">
+                            <div className={`absolute bottom-3 w-full flex justify-center gap-1.5 transition-opacity duration-500 ${isSelected ? 'opacity-80' : 'opacity-40 group-hover:opacity-70'}`}>
                                 {topic.tags?.slice(0, 3).map((tag, i) => (
-                                    <span key={i} className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
-                                        {tag}{i < 2 ? '•' : ''}
+                                    <span key={i} className="text-[9px] uppercase font-mono tracking-widest text-slate-300 animate-pulse">
+                                        {tag}{i < 2 ? <span className="text-slate-500 mx-0.5">•</span> : ''}
                                     </span>
                                 ))}
                             </div>
