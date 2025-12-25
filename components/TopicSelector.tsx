@@ -45,6 +45,36 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
     const { setError } = useStatus();
     const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [sortedTopics, setSortedTopics] = useState(TOPICS);
+
+    // ALGORITHM: Fetch post counts to prioritize "Trending" domains
+    useEffect(() => {
+        const fetchTrends = async () => {
+            try {
+                // Get post volume per domain
+                const rows = await execute('SELECT domain_id, COUNT(*) as count FROM posts GROUP BY domain_id');
+                const counts: Record<string, number> = {};
+                rows.forEach((r: any) => {
+                    counts[r.domain_id] = Number(r.count);
+                });
+
+                // Sort: High volume first (Algorithm)
+                const sorted = [...TOPICS].sort((a, b) => {
+                    const countA = counts[a.id] || 0;
+                    const countB = counts[b.id] || 0;
+                    return countB - countA; // Descending
+                });
+
+                setSortedTopics(sorted);
+
+            } catch (e) {
+                console.error("Failed to load topic trends", e);
+                // Fallback to default order if offline
+            }
+        };
+
+        fetchTrends();
+    }, []);
 
     useEffect(() => {
         if (profile?.interests) {
@@ -86,7 +116,7 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8 w-full max-w-4xl">
-                {TOPICS.map((topic) => {
+                {sortedTopics.map((topic) => {
                     const isSelected = selectedTopics.includes(topic.id);
                     return (
                         <button
