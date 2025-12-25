@@ -117,31 +117,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
         // This ensures posts in 'Cosmology' show up in 'Space' feeds
         const PARENT_MAP: Record<string, string> = {
             'Cosmology': 'Space',
-            // So 'Genetics' needs parent. 'Neuroscience' does NOT.
-
-            // 'Topology' (Key Line 100). Remove.
-            // 'Algebra' (Key Line 93). Remove.
-            // 'Civil Engineering' (Key Line 63). Remove.
-
-            'Startup': 'Business', // 'Entrepreneurship' is key (Line 78). 'Startup' is NOT key.
-            // Value contains 'startups'.
-            // 'Startup' manual selection?
-            // If user selects 'Startup', and 'Entrepreneurship' exists...
-            // Checking PARENT_MAP in Seeder (Line 302): 'Startup': 'Business'.
-            // So Seeder forces Startup -> Business.
-            // So 'Startup': 'Business' is CORRECT.
-
-            'Stoicism': 'Philosophy', // Seeder Line 303: Correct.
-            'Logic': 'Philosophy', // Seeder Line 304: Correct.
-            'Cognitive': 'Psychology', // Seeder Line 305: Correct.
-            'Indie': 'Gaming', // Seeder Line 306: Correct.
-            'RPG': 'Gaming', // Seeder 307: Correct.
-            'Movies': 'Cinema', // Seeder 308: Correct.
-            'Wellness': 'Health', // Seeder 309: Correct.
-            'Fitness': 'Health', // Seeder 310: Correct.
-            'Botany': 'Nature', // Seeder 311: Correct.
-            'Wildlife': 'Nature', // Seeder 312: Correct.
-            'Climate': 'Environment', // Seeder 313: Correct.
+            'Genetics': 'Biology',
+            'Startup': 'Business',
+            'Stoicism': 'Philosophy',
+            'Logic': 'Philosophy',
+            'Cognitive': 'Psychology',
+            'Indie': 'Gaming',
+            'RPG': 'Gaming',
+            'Movies': 'Cinema',
+            'Wellness': 'Health',
+            'Fitness': 'Health',
+            'Botany': 'Nature',
+            'Wildlife': 'Nature',
+            'Climate': 'Environment',
         };
 
         // Aggressively normalize to "Parent: Child" format to match Seeder
