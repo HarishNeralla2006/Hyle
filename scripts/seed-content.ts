@@ -180,7 +180,19 @@ const postsPerDomain = isBulk ? 7 : 1;
 
 // Pick domains
 const allDomains = Object.keys(DOMAIN_MAP);
-const selectedDomains = isBulk ? allDomains : allDomains.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+// PRIORITY SORT: Prioritize specific sub-domains (Capitalized) over generic ones (lowercase)
+// This ensures "Quantum Mechanics" is processed before "science".
+// "First Preference" rule implementation.
+allDomains.sort((a, b) => {
+    const isASpecific = /^[A-Z]/.test(a); // Starts with Uppercase (e.g. Astrophysics)
+    const isBSpecific = /^[A-Z]/.test(b);
+    if (isASpecific && !isBSpecific) return -1; // A comes first
+    if (!isASpecific && isBSpecific) return 1;  // B comes first
+    return 0;
+});
+
+const selectedDomains = isBulk ? allDomains : allDomains.slice(0, 5); // Increased non-bulk limit slightly
 
 console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Targeting ~${selectedDomains.length * postsPerDomain} new posts)`);
 
