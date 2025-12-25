@@ -254,6 +254,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
             } else {
                 const status = displayProfile?.is_private ? 'pending' : 'accepted';
                 await execute('INSERT IGNORE INTO follows (follower_id, following_id, status) VALUES (?, ?, ?)', [user.uid, profileId, status]);
+
+                // NOTIFICATION LOGIC ADDED
+                const notifId = crypto.randomUUID();
+                const now = new Date().toISOString();
+                await execute(
+                    'INSERT INTO notifications (id, user_id, actor_id, type, created_at, read_status) VALUES (?, ?, ?, ?, ?, ?)',
+                    [notifId, profileId, user.uid, 'follow', now, false]
+                );
+
                 setIsFollowing(true);
             }
             fetchStats();
@@ -263,7 +272,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
     const handleMessage = async () => {
         if (!user || !profileId) return;
         try {
-            setCurrentView({ type: ViewType.Chat, otherUserId: profileId });
+            const { getOrCreateChat } = await import('../services/chatService');
+            const chatId = await getOrCreateChat(user.uid, profileId);
+
+            // Navigate to Chat View with fully resolved ID
+            setCurrentView({ type: ViewType.Chat, chatId: chatId, otherUserId: profileId });
         } catch (e) { console.error(e); setError("Could not start chat."); }
     };
 
