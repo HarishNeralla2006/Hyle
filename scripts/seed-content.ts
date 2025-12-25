@@ -32,6 +32,14 @@ const DOMAIN_MAP: Record<string, string[]> = {
     'ai': ['artificial', 'MachineLearning', 'OpenAI', 'Singularity', 'ArtificialInteligence'],
     'space': ['space', 'nasa', 'SpaceX', 'astronomy', 'Astrophotography'],
     'nature': ['nature', 'EarthPorn', 'wildlife', 'botany', 'NatureIsFuckingLit'],
+    // Missing Top Levels (from SparkSphere)
+    'mathematics': ['math', 'mathematics', 'statistics', 'mathpics'],
+    'law': ['law', 'legaladvice', 'scotus', 'legal'],
+    'environment': ['environment', 'climatechange', 'sustainability', 'ecology'],
+    'literature': ['books', 'literature', 'ClassicBookClub', 'Poetry'],
+    'engineering': ['engineering', 'CivilEngineering', 'mechanicalengineering', 'Electronics'],
+    'education': ['education', 'Teachers', 'teaching', 'EdTech'],
+    'social sciences': ['sociology', 'anthropology', 'socialscience', 'Economics'],
 
     // --- SUB-SPHERE MIRRORS (Drill-down content) ---
     // Science Subs
