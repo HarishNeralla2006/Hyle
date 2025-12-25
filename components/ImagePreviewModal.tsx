@@ -55,6 +55,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           // ALIASING ALGORITHM
           const normalize = (s: string) => s.toLowerCase().trim();
           // ALIASING ALGORITHM V2
+          const target = normalize(domain.id);
           const idSet = new Set<string>([target]);
 
           // HIERARCHY MAPPING (Mirrors Seed Content Logic)
