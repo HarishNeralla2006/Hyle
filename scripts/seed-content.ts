@@ -13,6 +13,7 @@ import { randomUUID } from 'crypto';
 // -----------------------------------------------------------------------------
 
 // Map Spark Domains to Subreddits
+// NOTE: Keys MUST match the ID in TopicSelector.tsx (Singular mostly)
 const DOMAIN_MAP: Record<string, string[]> = {
     'science': ['science', 'EverythingScience', 'biology'],
     'physics': ['Physics', 'astrophysics', 'QuantumPhysics'],
@@ -65,7 +66,7 @@ const HUMAN_USERS = [
     { id: 'user_adam', name: 'Adam_Rocket', desc: 'Aerospace engineer.' }
 ];
 
-// Thematic Bot Personas (Keep as fallback or legacy)
+// Thematic Bot Personas
 const PERSONAS = {
     'NOVA': { id: 'bot_nova', name: 'Nova', desc: 'The Explorer' },
     'PIXEL': { id: 'bot_pixel', name: 'Pixel', desc: 'The Technologist' },
@@ -80,7 +81,7 @@ const PERSONAS = {
 // -----------------------------------------------------------------------------
 
 async function main() {
-    console.log("🌱 Starting Content Seeder (Refined - Organic Community)...");
+    console.log("🌱 Starting Content Seeder (Refined - Normalized)...");
 
     if (!process.env.DATABASE_URL) {
         console.error("❌ Fatal: DATABASE_URL is missing. Make sure .env.local exists or vars are set.");
@@ -89,19 +90,19 @@ async function main() {
 
     const conn = connect({ url: process.env.DATABASE_URL });
 
+    // Step 0: Normalize Domains (Fix "arts" -> "art")
+    await normalizeDomains(conn);
+
     if (process.argv.includes('--purge-bots')) {
         await purgeBotPosts(conn);
         return;
     }
 
     const isBulk = process.argv.includes('--bulk');
-    // TARGET: ~100 posts.
-    // 15 Domains * 7 posts = 105 posts.
     const postsPerDomain = isBulk ? 7 : 1;
 
     // Pick domains
     const allDomains = Object.keys(DOMAIN_MAP);
-    // Shuffle domains to ensure variety even if we error out
     const selectedDomains = isBulk ? allDomains : allDomains.sort(() => 0.5 - Math.random()).slice(0, 3);
 
     console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Targeting ~${selectedDomains.length * postsPerDomain} new posts)`);
@@ -116,6 +117,24 @@ async function main() {
     console.log("✅ Seeding completed.");
 }
 
+async function normalizeDomains(conn: any) {
+    console.log("🔄 Normalizing Domain IDs...");
+    try {
+        // Fix 'arts' -> 'art'
+        await conn.execute(`UPDATE posts SET domain_id = 'art' WHERE domain_id = 'arts'`);
+        await conn.execute(`UPDATE posts SET domain_id = 'art' WHERE domain_id = 'Art'`);
+        await conn.execute(`UPDATE posts SET domain_id = 'art' WHERE domain_id = 'Arts'`);
+
+        // Fix other common mis-matches if they exist
+        await conn.execute(`UPDATE posts SET domain_id = 'science' WHERE domain_id = 'Science'`);
+        await conn.execute(`UPDATE posts SET domain_id = 'technology' WHERE domain_id = 'tech'`);
+
+        console.log("   ✅ Domains normalized to singular canonical IDs.");
+    } catch (e: any) {
+        console.error("   ⚠️ Normalization warning (non-fatal):", e.message);
+    }
+}
+
 async function ensureHumanProfiles(conn: any) {
     console.log("   Checking Human Profiles...");
 
@@ -128,7 +147,6 @@ async function ensureHumanProfiles(conn: any) {
             `, [
                 user.id,
                 user.name,
-                // Using 'avataaars' style for a more human look than 'bottts'
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}&backgroundColor=b6e3f4,c0aede,d1d4f9`,
                 user.desc,
                 user.name,
@@ -142,13 +160,6 @@ async function ensureHumanProfiles(conn: any) {
 
 async function purgeBotPosts(conn: any) {
     console.log("🔥 PURGING ALL BOT POSTS...");
-
-    // Purge both the old Bots AND the new Humans (if any existed) to start fresh-ish
-    // But user just said "push next 100", implies adding to it. 
-    // IF user wanted to clear, they would ask. 
-    // Wait, script has --purge-bots flag, but we aren't creating it with that flag unless asked.
-    // We only purge the "Bot" personas if specifically asked.
-    // Let's just keep the logic here for safety.
     return;
 }
 
@@ -183,8 +194,6 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
             let body = post.selftext || '';
             const isShortText = body.length < 250;
-
-            // High Image Preference
             const wantsImage = Math.random() < 0.70;
 
             if (wantsImage && !hasImage) {
@@ -196,7 +205,6 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             // -------------------------------------------------------------------------
             // HUMAN ASSIGNMENT
             // -------------------------------------------------------------------------
-            // Pick a random human from the pool
             const randomHuman = HUMAN_USERS[Math.floor(Math.random() * HUMAN_USERS.length)];
 
             // FORMATTING
@@ -220,7 +228,7 @@ async function processDomain(conn: any, domainId: string, limit: number) {
                     VALUES (?, ?, ?, ?, ?, NOW())
                 `, [postId, randomHuman.id, domainId, finalContent, imageUrl]);
 
-                console.log(`      + ${randomHuman.name} Posted: "${cleanTitle.substring(0, 30)}..." (Img: ${!!imageUrl})`);
+                console.log(`      + ${randomHuman.name} Posted: "${cleanTitle.substring(0, 30)}..."`);
                 postsAdded++;
             } catch (err: any) { }
         }
