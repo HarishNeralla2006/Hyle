@@ -209,7 +209,17 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             // CLEANUP TITLE
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
 
-            const content = `**${cleanTitle}**\n\n${post.selftext || ''}\n\n[Source](https://reddit.com${post.permalink})`;
+            // FORMATTING: Plain text only (App doesn't render Markdown)
+            // 1. Title first
+            // 2. Body text (if any)
+            // 3. Source link at the bottom
+            let finalContent = `${cleanTitle}`;
+            if (post.selftext) {
+                finalContent += `\n\n${post.selftext}`;
+            }
+            // Add source cleanly
+            finalContent += `\n\nSource: https://reddit.com${post.permalink}`;
+
             const imageUrl = hasImage ? post.url : null;
 
             // Insert
@@ -217,9 +227,9 @@ async function processDomain(conn: any, domainId: string, limit: number) {
                 await conn.execute(`
                     INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
                     VALUES (?, ?, ?, ?, ?, NOW())
-                `, [postId, botUser.id, domainId, content, imageUrl]);
+                `, [postId, botUser.id, domainId, finalContent, imageUrl]);
 
-                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..."`);
+                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Image: ${!!imageUrl})`);
                 postsAdded++;
             } catch (err: any) {
                 // Ignore errors
