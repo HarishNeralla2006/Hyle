@@ -179,9 +179,9 @@ const Home: React.FC = () => {
         return (
             <div className="h-screen w-screen flex flex-col font-sans overflow-hidden bg-[var(--bg-color)] items-center justify-center">
                 <StatusDisplay showUplink={false} />
-                <div className="z-10 w-full max-w-md px-4">
+                <section className="flex-1 w-full max-w-4xl mx-auto px-6 md:px-0 pb-32">
                     <AuthView />
-                </div>
+                </section>
                 <div className="bg-mesh opacity-50"></div>
             </div>
         );
@@ -204,7 +204,7 @@ const Home: React.FC = () => {
                     onOpenCreatePostModal={() => handleOpenCreateModal()}
                 />
 
-                <main className={`flex-1 flex w-full min-w-0 relative flex-col overflow-hidden md:pt-0 md:pb-0 ${currentView.type === ViewType.Chat ? 'pt-0 pb-0' : 'pt-14 pb-16'}`}>
+                <main className={`flex-1 flex w-full min-w-0 relative flex-col overflow-hidden md:pt-0 md:pb-0 ${currentView.type === ViewType.Chat ? 'pt-0 pb-0' : 'pt-14 pb-24'}`}>
                     {renderView()}
 
                     {currentView.overlayProfileId && (

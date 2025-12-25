@@ -6,7 +6,7 @@ import { ROOT_DOMAINS } from '../services/pollinationsService';
 
 interface SearchViewProps {
     domainTree: Domain | null;
-    setCurrentView: (view: ViewState) => void;
+    setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>;
 }
 
 type SearchMode = 'frequency' | 'signal' | 'people';
@@ -237,7 +237,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
             </div>
 
             {/* Results Area */}
-            <div className="flex-1 overflow-y-auto px-3 md:px-4 pb-20 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto px-3 md:px-4 pb-32 custom-scrollbar">
                 <div className="max-w-4xl mx-auto py-2 md:py-4">
 
                     {/* FREQUENCY RESULTS */}
@@ -322,7 +322,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                                     {peopleResults.map((profile) => (
                                         <div
                                             key={profile.id}
-                                            onClick={() => setCurrentView({ type: ViewType.Profile, userId: profile.id })}
+                                            onClick={() => setCurrentView((prev) => ({ ...prev, overlayProfileId: profile.id }))}
                                             className="flex items-center p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-[var(--primary-accent)]/30 cursor-pointer transition-all group"
                                         >
                                             <div className="w-12 h-12 rounded-full bg-slate-800 overflow-hidden mr-3 shrink-0 ring-2 ring-transparent group-hover:ring-[var(--primary-accent)]/50 transition-all">

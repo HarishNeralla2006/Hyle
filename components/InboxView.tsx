@@ -5,7 +5,7 @@ import { ViewState, ViewType, ChatSession } from '../types';
 import { ProfileIcon, SearchIcon, PlusCircleIcon, CloseIcon } from './icons';
 
 interface InboxViewProps {
-    setCurrentView: (view: ViewState) => void;
+    setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>;
 }
 
 const InboxView: React.FC<InboxViewProps> = ({ setCurrentView }) => {
@@ -21,8 +21,8 @@ const InboxView: React.FC<InboxViewProps> = ({ setCurrentView }) => {
         if (showNewChat && user) {
             execute(`
                 SELECT p.* FROM profiles p 
-                JOIN follows f ON (f.following_id = p.id AND f.follower_id = ?) 
-                OR (f.follower_id = p.id AND f.following_id = ?)
+                JOIN follows f ON(f.following_id = p.id AND f.follower_id = ?)
+OR(f.follower_id = p.id AND f.following_id = ?)
                 GROUP BY p.id
             `, [user.uid, user.uid]).then(res => setFollowList(res));
         }
@@ -39,7 +39,7 @@ const InboxView: React.FC<InboxViewProps> = ({ setCurrentView }) => {
                      FROM chats c
                      JOIN chat_participants cp ON c.id = cp.chat_id
                      WHERE cp.user_id = ?
-                     ORDER BY c.updatedAt DESC`,
+    ORDER BY c.updatedAt DESC`,
                     [user.uid]
                 );
 
@@ -52,7 +52,7 @@ const InboxView: React.FC<InboxViewProps> = ({ setCurrentView }) => {
                         `SELECT p.id, p.username, p.photoURL 
                          FROM profiles p
                          JOIN chat_participants cp ON p.id = cp.user_id
-                         WHERE cp.chat_id = ? AND p.id != ?`,
+                         WHERE cp.chat_id = ? AND p.id != ? `,
                         [chat.id, user.uid]
                     );
 
@@ -114,14 +114,14 @@ const InboxView: React.FC<InboxViewProps> = ({ setCurrentView }) => {
                 <div className="flex space-x-6 border-b border-[var(--glass-border)]">
                     <button
                         onClick={() => setActiveTab('primary')}
-                        className={`pb-3 font-medium text-sm transition-colors relative ${activeTab === 'primary' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`pb - 3 font - medium text - sm transition - colors relative ${activeTab === 'primary' ? 'text-white' : 'text-slate-500 hover:text-slate-300'} `}
                     >
                         Primary
                         {activeTab === 'primary' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[var(--primary-accent)] rounded-full"></div>}
                     </button>
                     <button
                         onClick={() => setActiveTab('requests')}
-                        className={`pb-3 font-medium text-sm transition-colors relative ${activeTab === 'requests' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`pb - 3 font - medium text - sm transition - colors relative ${activeTab === 'requests' ? 'text-white' : 'text-slate-500 hover:text-slate-300'} `}
                     >
                         Requests
                         {requests.length > 0 && <span className="ml-2 px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded-full">{requests.length}</span>}
@@ -137,7 +137,7 @@ const InboxView: React.FC<InboxViewProps> = ({ setCurrentView }) => {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pb-32">
                 {(activeTab === 'primary' ? chats : requests).length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-slate-500">
                         <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
