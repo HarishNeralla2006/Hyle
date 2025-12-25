@@ -159,8 +159,8 @@ async function processDomain(conn: any, domainId: string, limit: number) {
     console.log(`   Processing ${domainId} -> r/${subreddit} [Bot: ${botUser.name}]`);
 
     try {
-        // Fetch MORE posts to ensure we can filter down to quality ones
-        const fetchLimit = limit + 15;
+        // Fetch EVEN MORE posts to find good images
+        const fetchLimit = limit + 20;
         const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
         });
@@ -179,29 +179,20 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             const post = item.data;
 
             // -------------------------------------------------------------------------
-            // QUALITY FILTER: "No Small Posts"
+            // QUALITY FILTER: "Mostly Images"
             // -------------------------------------------------------------------------
             const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
-
             let body = post.selftext || '';
-            const isShortText = body.length < 200; // Text must be substantial (>200 chars)
+            const isShortText = body.length < 200;
 
-            // RULE: "Prefer content with image"
-            // We boost image probability to 50%
-            const wantsImage = Math.random() < 0.50;
+            // HEAVY IMAGE BIAS: 85% chance we ONLY want images
+            const wantsImage = Math.random() < 0.85;
 
-            // LOGIC:
-            // 1. If it wants an image, but post has no image -> SKIP (unless text is GREAT)
-            // 2. If it is a text post, but text is "small" (<200 chars) -> SKIP
-
-            if (wantsImage && !hasImage) {
-                // If we really wanted an image but didn't get one, strict check on text
-                if (isShortText) continue;
-            }
-
-            if (!hasImage && isShortText) {
-                // Skip text-only posts that are too short (one-liners)
-                continue;
+            if (wantsImage) {
+                if (!hasImage) continue; // If we wanted an image and didn't get one, SKIP.
+            } else {
+                // We're okay with text, but it must be long
+                if (isShortText && !hasImage) continue;
             }
 
             // FORMATTING (Plain Text, No Source, FULL CONTENT)
@@ -227,7 +218,7 @@ async function processDomain(conn: any, domainId: string, limit: number) {
                     VALUES (?, ?, ?, ?, ?, NOW())
                 `, [postId, botUser.id, domainId, finalContent, imageUrl]);
 
-                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Img: ${!!imageUrl}, Len: ${body.length})`);
+                console.log(`      + ${botUser.name} Posted: "..." (Img: ${!!imageUrl}, Len: ${body.length})`);
                 postsAdded++;
             } catch (err: any) { }
         }
