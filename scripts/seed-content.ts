@@ -1,4 +1,10 @@
 
+import * as dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
 import { connect } from '@tidbcloud/serverless';
 import { randomUUID } from 'crypto';
 
@@ -40,34 +46,41 @@ async function main() {
     console.log("🌱 Starting Content Seeder...");
 
     if (!process.env.DATABASE_URL) {
-        console.error("❌ Fatal: DATABASE_URL is missing.");
+        console.error("❌ Fatal: DATABASE_URL is missing. Make sure .env.local exists or vars are set.");
         process.exit(1);
     }
 
     const conn = connect({ url: process.env.DATABASE_URL });
 
-    // 1. Pick 3 random domains to update this run
-    const allDomains = Object.keys(DOMAIN_MAP);
-    const selectedDomains = allDomains.sort(() => 0.5 - Math.random()).slice(0, 3);
+    // BULK MODE: If running manually, we might want to fill the DB.
+    // Standard run: 3 domains. Bulk run: All domains, 3 posts each (~45 posts).
+    const isBulk = process.argv.includes('--bulk');
+    const postsPerDomain = isBulk ? 3 : 1;
 
-    console.log(`🎯 Targeted Domains: ${selectedDomains.join(', ')}`);
+    // Pick domains
+    const allDomains = Object.keys(DOMAIN_MAP);
+    const selectedDomains = isBulk ? allDomains : allDomains.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+    console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Bulk: ${isBulk})`);
 
     for (const domain of selectedDomains) {
-        await processDomain(conn, domain);
+        await processDomain(conn, domain, postsPerDomain);
     }
 
     console.log("✅ Seeding completed.");
 }
 
-async function processDomain(conn: any, domainId: string) {
+async function processDomain(conn: any, domainId: string, limit: number) {
     const subreddits = DOMAIN_MAP[domainId];
     const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
 
     console.log(`   Processing ${domainId} -> r/${subreddit}`);
 
     try {
-        // Fetch top post of the day
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=1`, {
+        // Fetch top posts of the day
+        // We fetch slightly more than 'limit' to account for filters (images/text ratio)
+        const fetchLimit = limit + 5;
+        const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
         });
 
@@ -77,50 +90,50 @@ async function processDomain(conn: any, domainId: string) {
         }
 
         const data = await response.json();
-        const post = data.data.children[0]?.data;
+        const posts = data.data.children;
 
-        if (!post) {
+        if (!posts || posts.length === 0) {
             console.log("   ⚠️ No posts found.");
             return;
         }
 
-        // -------------------------------------------------------------------------
-        // 30% IMAGE / 70% TEXT RULE
-        // -------------------------------------------------------------------------
-        const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
-        const wantsImage = Math.random() < 0.30; // 30% chance we WANT an image
+        let postsAdded = 0;
 
-        if (wantsImage && !hasImage) {
-            console.log(`   ⏭️ Skipped: Wanted image, but post was text.`);
-            return;
+        for (const item of posts) {
+            if (postsAdded >= limit) break;
+
+            const post = item.data;
+
+            // -------------------------------------------------------------------------
+            // 30% IMAGE / 70% TEXT RULE
+            // -------------------------------------------------------------------------
+            const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
+            const wantsImage = Math.random() < 0.30;
+
+            if (wantsImage && !hasImage) continue; // Skip if we wanted image but got text
+
+            // If we wanted text but got image, we allow it ONLY if we haven't filled quota, 
+            // but loosely enforce preference. For bulk, we get what we can.
+
+            // Prepare Data
+            const postId = randomUUID();
+            const botUser = BOT_USERS[Math.floor(Math.random() * BOT_USERS.length)];
+            const content = `**${post.title}**\n\n${post.selftext || ''}\n\n[Source](https://reddit.com${post.permalink})`;
+            const imageUrl = hasImage ? post.url : null;
+
+            // Insert
+            try {
+                await conn.execute(`
+                    INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
+                    VALUES (?, ?, ?, ?, ?, NOW())
+                `, [postId, botUser.id, domainId, content, imageUrl]);
+
+                console.log(`      + Posted: "${post.title.substring(0, 30)}..."`);
+                postsAdded++;
+            } catch (err: any) {
+                // Ignore errors (like dupes if we had better checks)
+            }
         }
-        if (!wantsImage && hasImage) {
-            // If we wanted text but got an image, we CAN still use it, 
-            // but let's prefer text bodies if available. 
-            // For now, straightforward logic: if we strictly want text-heavy, maybe skip simple image posts?
-            // Actually, let's just allow it but strip the image if strictly text mode? 
-            // No, better to just skip to maintain the ratio loosely.
-            console.log(`   ⏭️ Skipped: Wanted text/discussion, but post was image.`);
-            return;
-        }
-
-        // Prepare Data
-        const postId = randomUUID();
-        const botUser = BOT_USERS[Math.floor(Math.random() * BOT_USERS.length)];
-        const content = `**${post.title}**\n\n${post.selftext || ''}\n\n[Source](https://reddit.com${post.permalink})`;
-        const imageUrl = hasImage ? post.url : null;
-
-        // Check for duplicates (Simple check by Title content rough match or just recent limits)
-        // Ideally we check if we already posted this source link, but for now let's just insert.
-        // We'll trust the "limit=1" and "t=day" rotation to keep it mostly fresh.
-
-        // Insert
-        await conn.execute(`
-            INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
-            VALUES (?, ?, ?, ?, ?, NOW())
-        `, [postId, botUser.id, domainId, content, imageUrl]);
-
-        console.log(`   ✅ Posted: "${post.title.substring(0, 30)}..."`);
 
     } catch (e: any) {
         console.error(`   ❌ Error processing ${domainId}:`, e.message);
