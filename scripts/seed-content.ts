@@ -91,6 +91,21 @@ async function main() {
         return;
     }
 
+    // FIX MODE 3: Clean up Markdown formatting in existing posts
+    if (process.argv.includes('--fix-content')) {
+        await fixLegacyContent(conn);
+        return;
+    }
+
+    // MASTER FIX: Run all fixes
+    if (process.argv.includes('--fix-all')) {
+        await ensureBotProfiles(conn);
+        await fixLegacyPosts(conn);
+        await fixLegacyImages(conn);
+        await fixLegacyContent(conn);
+        return;
+    }
+
     // BULK MODE: If running manually, we might want to fill the DB.
     // Standard run: 3 domains. Bulk run: All domains, 3 posts each (~45 posts).
     const isBulk = process.argv.includes('--bulk');
@@ -164,7 +179,6 @@ async function fixLegacyImages(conn: any) {
     const placeholders = BOT_IDS.map(() => '?').join(',');
 
     try {
-        // 1. Get all bot posts with images that aren't already proxied
         const rows = await conn.execute(`
             SELECT id, imageURL FROM posts 
             WHERE imageURL IS NOT NULL 
@@ -189,6 +203,52 @@ async function fixLegacyImages(conn: any) {
 
     } catch (e: any) {
         console.error("❌ Failed to fix images:", e.message);
+    }
+}
+
+async function fixLegacyContent(conn: any) {
+    console.log("📝 Flattening Markdown in Legacy Posts...");
+
+    const BOT_IDS = Object.values(PERSONAS).map(p => p.id);
+    const placeholders = BOT_IDS.map(() => '?').join(',');
+
+    try {
+        // Fetch all bot posts
+        const rows = await conn.execute(`
+            SELECT id, content FROM posts 
+            WHERE user_id IN (${placeholders})
+        `, BOT_IDS);
+
+        console.log(`   🔍 Checking ${rows.length} posts for markdown artifacts...`);
+        let fixedCount = 0;
+
+        for (const row of rows) {
+            let content = row.content || "";
+            let needsUpdate = false;
+
+            // 1. Remove bolding around title (Start of string)
+            // Pattern: **Title** at start
+            if (content.startsWith('**')) {
+                content = content.replace(/^\*\*(.*?)\*\*/s, '$1');
+                needsUpdate = true;
+            }
+
+            // 2. Fix [Source](link) -> Source: link
+            if (content.includes('[Source](')) {
+                content = content.replace(/\[Source\]\((.*?)\)/g, 'Source: $1');
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                await conn.execute('UPDATE posts SET content = ? WHERE id = ?', [content, row.id]);
+                fixedCount++;
+                // console.log(`      Fixed: ${row.id}`);
+            }
+        }
+        console.log(`✅ Content Cleanup Complete. Fixed ${fixedCount} posts.`);
+
+    } catch (e: any) {
+        console.error("❌ Failed to fix content:", e.message);
     }
 }
 
@@ -225,6 +285,9 @@ async function processDomain(conn: any, domainId: string, limit: number) {
 
             // FORMATTING (Plain Text)
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+            // Remove any markdown characters from title just in case
+            cleanTitle = cleanTitle.replace(/\*\*/g, '').replace(/\*/g, '').replace(/__/g, '');
+
             let finalContent = `${cleanTitle}`;
             if (post.selftext) finalContent += `\n\n${post.selftext}`;
             finalContent += `\n\nSource: https://reddit.com${post.permalink}`;
