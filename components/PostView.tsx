@@ -128,10 +128,17 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                                     <TrashIcon className="w-4 h-4" />
                                 </button>
                             </div>
+// Add import at the top
+import {RichTextRenderer} from './RichTextRenderer';
+
+// ... inside PostCard standard view ...
+
                         )}
                     </div>
 
-                    <p className="text-[var(--text-color)] whitespace-pre-wrap leading-relaxed text-[15px] font-normal tracking-wide pl-1">{post.content}</p>
+                    <div className="pl-1 text-[var(--text-color)] leading-relaxed text-[15px] font-normal tracking-wide">
+                        <RichTextRenderer content={post.content} />
+                    </div>
 
                     {post.imageURL && (
                         <div className="mt-4 rounded-xl overflow-hidden border border-white/10 max-h-96 w-full">
