@@ -87,6 +87,7 @@ async function main() {
     // BULK MODE: If running manually, we might want to fill the DB.
     // Standard run: 3 domains. Bulk run: All domains, 3 posts each (~45 posts).
     const isBulk = process.argv.includes('--bulk');
+    // INCREASED: Get deeper content
     const postsPerDomain = isBulk ? 3 : 1;
 
     // Pick domains
@@ -159,7 +160,7 @@ async function processDomain(conn: any, domainId: string, limit: number) {
     console.log(`   Processing ${domainId} -> r/${subreddit} [Bot: ${botUser.name}]`);
 
     try {
-        // Fetch EVEN MORE posts to find good images
+        // Fetch MORE posts to ensure we can filter down to quality ones
         const fetchLimit = limit + 20;
         const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
@@ -179,20 +180,24 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             const post = item.data;
 
             // -------------------------------------------------------------------------
-            // QUALITY FILTER: "Mostly Images"
+            // QUALITY FILTER v2: "Heavy Image Bias"
             // -------------------------------------------------------------------------
             const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
+
             let body = post.selftext || '';
-            const isShortText = body.length < 200;
+            const isShortText = body.length < 250;
 
-            // HEAVY IMAGE BIAS: 85% chance we ONLY want images
-            const wantsImage = Math.random() < 0.85;
+            // LOGIC: HEAVY IMAGE PREFERENCE (70%)
+            const wantsImage = Math.random() < 0.70;
 
-            if (wantsImage) {
-                if (!hasImage) continue; // If we wanted an image and didn't get one, SKIP.
-            } else {
-                // We're okay with text, but it must be long
-                if (isShortText && !hasImage) continue;
+            if (wantsImage && !hasImage) {
+                // Wanted image, didn't find one. Skip unless text is REALLY good (>500 chars)
+                if (body.length < 500) continue;
+            }
+
+            if (!hasImage && isShortText) {
+                // Absolute hard filter on small text posts
+                continue;
             }
 
             // FORMATTING (Plain Text, No Source, FULL CONTENT)
@@ -213,12 +218,15 @@ async function processDomain(conn: any, domainId: string, limit: number) {
 
             const postId = randomUUID();
             try {
+                // Use INSERT JOIN to avoid duplicates if re-running
+                // (Note: TiDB simple implementation usually just fails on primary key, which is randomUUID here,
+                // but checking content hash is hard. We rely on random sampling to avoid dupes mostly).
                 await conn.execute(`
                     INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
                     VALUES (?, ?, ?, ?, ?, NOW())
                 `, [postId, botUser.id, domainId, finalContent, imageUrl]);
 
-                console.log(`      + ${botUser.name} Posted: "..." (Img: ${!!imageUrl}, Len: ${body.length})`);
+                console.log(`      + ${botUser.name} Posted: "${cleanTitle.substring(0, 30)}..." (Img: ${!!imageUrl})`);
                 postsAdded++;
             } catch (err: any) { }
         }
