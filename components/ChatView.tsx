@@ -252,7 +252,7 @@ const ChatView: React.FC<ChatViewProps> = ({ chatId, otherUserId, setCurrentView
                                 )}
                                 <div>
                                     <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isMe
-                                        ? 'bg-[var(--primary-accent)] text-white rounded-tr-sm'
+                                        ? 'bg-[var(--primary-accent)] text-black font-medium rounded-tr-sm'
                                         : 'bg-[var(--glass-surface)] text-[var(--text-color)] rounded-tl-sm border border-[var(--glass-border)]'
                                         }`}>
                                         {msg.text}

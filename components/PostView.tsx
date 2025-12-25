@@ -16,13 +16,13 @@ interface PostViewProps {
     refreshKey?: number;
 }
 
-const CommentCard: React.FC<{ comment: Comment, onDelete: () => void, onReply: (username: string) => void, currentUserId: string | undefined }> = ({ comment, onDelete, onReply, currentUserId }) => {
+const CommentCard: React.FC<{ comment: Comment, onDelete: () => void, onReply: (username: string) => void, onUserClick: (uid: string) => void, currentUserId: string | undefined }> = ({ comment, onDelete, onReply, onUserClick, currentUserId }) => {
     const isOwner = comment.user_id === currentUserId;
     return (
         <div className="py-3 border-l-2 border-white/5 pl-4 hover:border-[var(--primary-accent)]/50 transition-colors group animate-fade-in-right">
             <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-xs text-[var(--primary-accent)] tracking-wide font-mono">{comment.profiles.username}</span>
+                    <span onClick={() => onUserClick(comment.user_id)} className="font-bold text-xs text-[var(--primary-accent)] tracking-wide font-mono cursor-pointer hover:underline">{comment.profiles.username}</span>
                     <span className="text-[10px] text-slate-500 font-mono">:: {new Date(comment.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -161,7 +161,7 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         {post.comments.length > 0 ? (
                             <div className="space-y-3 mb-6">
                                 {post.comments.map(comment => (
-                                    <CommentCard key={comment.id} comment={comment} onDelete={() => onDeleteComment(comment.id)} onReply={handleReply} currentUserId={currentUserId} />
+                                    <CommentCard key={comment.id} comment={comment} onDelete={() => onDeleteComment(comment.id)} onReply={handleReply} onUserClick={onUserClick} currentUserId={currentUserId} />
                                 ))}
                             </div>
                         ) : (
