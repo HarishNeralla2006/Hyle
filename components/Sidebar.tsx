@@ -6,7 +6,7 @@ import { signOut } from 'firebase/auth';
 import { ViewState, ViewType, Theme } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import {
-    HomeIcon, SearchIcon, PlusCircleIcon, HeartIcon,
+    HomeIcon, SearchIcon, PlusCircleIcon, HeartIcon, RadarIcon,
     ProfileIcon, SettingsIcon, LogoutIcon, SendIcon, MenuIcon, BellIcon, GlobeIcon
 } from './icons';
 
@@ -99,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setCurrentView, currentViewType, onOp
                     onClick={() => navigate(ViewType.Feed)}
                 />
                 <NavItem
-                    icon={<SearchIcon className="w-6 h-6" />}
+                    icon={<RadarIcon className="w-6 h-6" />}
                     label="Search"
                     isActive={currentViewType === ViewType.Search}
                     onClick={() => navigate(ViewType.Search)}

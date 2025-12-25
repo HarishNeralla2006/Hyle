@@ -9,7 +9,7 @@ interface SearchViewProps {
     setCurrentView: (view: ViewState) => void;
 }
 
-type SearchMode = 'frequency' | 'signal';
+type SearchMode = 'frequency' | 'signal' | 'people';
 
 type FrequencyResult = {
     id: string; // Full path e.g. "Science/Physics"
@@ -45,6 +45,10 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
     // Signal Mode State
     const [signalResults, setSignalResults] = useState<any[]>([]); // Using any for partial post data
     const [signalLoading, setSignalLoading] = useState(false);
+
+    // People Mode State
+    const [peopleResults, setPeopleResults] = useState<any[]>([]);
+    const [peopleLoading, setPeopleLoading] = useState(false);
 
     // 1. Fetch Active Frequencies (Real-time DB Counts)
     useEffect(() => {
@@ -109,6 +113,34 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
         }
     }, [mode, searchTerm]);
 
+    // 3. Search People
+    useEffect(() => {
+        if (mode === 'people' && searchTerm.trim().length > 1) {
+            const fetchPeople = async () => {
+                setPeopleLoading(true);
+                try {
+                    const sql = `
+                        SELECT id, username, photoURL, bio
+                        FROM profiles
+                        WHERE LOWER(username) LIKE LOWER(?)
+                        ORDER BY username ASC
+                        LIMIT 20
+                    `;
+                    const results = await execute(sql, [`%${searchTerm}%`]);
+                    setPeopleResults(results);
+                } catch (e) {
+                    console.error("People search failed", e);
+                } finally {
+                    setPeopleLoading(false);
+                }
+            };
+            const timer = setTimeout(fetchPeople, 300);
+            return () => clearTimeout(timer);
+        } else if (mode === 'people' && !searchTerm.trim()) {
+            setPeopleResults([]);
+        }
+    }, [mode, searchTerm]);
+
 
     // Combined Frequency List (Hybrid: Tree + Active)
     const filteredFrequencies = useMemo(() => {
@@ -170,7 +202,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder={mode === 'frequency' ? "Search frequencies..." : "Search transmission content..."}
+                            placeholder={mode === 'frequency' ? "Search frequencies..." : mode === 'people' ? "Search citizens..." : "Search transmission content..."}
                             className="bg-transparent border-none focus:outline-none text-white text-sm md:text-lg w-full placeholder-slate-600 font-medium"
                         />
                         {searchTerm && (
@@ -194,6 +226,12 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                         className={`px-4 py-1.5 md:px-6 md:py-2 rounded-full text-xs md:text-sm font-bold uppercase tracking-wider transition-all ${mode === 'signal' ? 'bg-[var(--primary-accent)] text-black shadow-lg shadow-[var(--primary-accent)]/20' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                     >
                         Signals
+                    </button>
+                    <button
+                        onClick={() => setMode('people')}
+                        className={`px-4 py-1.5 md:px-6 md:py-2 rounded-full text-xs md:text-sm font-bold uppercase tracking-wider transition-all ${mode === 'people' ? 'bg-[var(--primary-accent)] text-black shadow-lg shadow-[var(--primary-accent)]/20' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                    >
+                        People
                     </button>
                 </div>
             </div>
@@ -263,6 +301,45 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                                                 </div>
                                             </div>
                                             <p className="text-sm text-slate-300 line-clamp-2 group-hover:text-white transition-colors">{post.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* PEOPLE RESULTS */}
+                    {mode === 'people' && (
+                        <>
+                            {peopleLoading ? (
+                                <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-accent)]"></div></div>
+                            ) : !searchTerm.trim() ? (
+                                <div className="text-center py-20 opacity-50"><p className="text-slate-400 uppercase tracking-widest text-xs">Search for citizens</p></div>
+                            ) : peopleResults.length === 0 ? (
+                                <div className="text-center py-20 opacity-50"><p className="text-slate-400 uppercase tracking-widest text-xs">No citizens found</p></div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {peopleResults.map((profile) => (
+                                        <div
+                                            key={profile.id}
+                                            onClick={() => setCurrentView({ type: ViewType.Profile, userId: profile.id })}
+                                            className="flex items-center p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-[var(--primary-accent)]/30 cursor-pointer transition-all group"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-slate-800 overflow-hidden mr-3 shrink-0 ring-2 ring-transparent group-hover:ring-[var(--primary-accent)]/50 transition-all">
+                                                {profile.photoURL ? (
+                                                    <img src={profile.photoURL} alt={profile.username} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-white font-bold bg-[var(--primary-accent)]">
+                                                        {profile.username?.[0]?.toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-white font-bold tracking-wide group-hover:text-[var(--primary-accent)] transition-colors truncate">
+                                                    {profile.username}
+                                                </h3>
+                                                {profile.bio && <p className="text-xs text-slate-500 truncate">{profile.bio}</p>}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

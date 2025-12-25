@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ViewType, ViewState } from '../types';
-import { HomeIcon, SearchIcon, PlusCircleIcon, CommentIcon, ProfileIcon, BellIcon, GridIcon, GlobeIcon, HyleIcon } from './icons';
+import { HomeIcon, SearchIcon, PlusCircleIcon, CommentIcon, ProfileIcon, BellIcon, GridIcon, GlobeIcon, HyleIcon, RadarIcon } from './icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface MobileTopBarProps {
@@ -28,7 +28,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({ setCurrentView, curr
                     onClick={() => setCurrentView({ type: ViewType.Search })}
                     className={`p-2 rounded-full transition-colors ${currentViewType === ViewType.Search ? 'text-white bg-white/10' : 'text-slate-400'}`}
                 >
-                    <SearchIcon className="w-6 h-6" />
+                    <RadarIcon className="w-6 h-6" />
                 </button>
                 <button
                     onClick={() => setCurrentView({ type: ViewType.Notifications })}
