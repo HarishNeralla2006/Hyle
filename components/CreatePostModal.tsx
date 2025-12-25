@@ -116,25 +116,37 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
         // FIX: Ensure manual posts use the same Composite ID logic as the seeder
         // This ensures posts in 'Cosmology' show up in 'Space' feeds
         const PARENT_MAP: Record<string, string> = {
-            'Cosmology': 'Space',
-            'Astronomy': 'Space',
-            'Neuroscience': 'Biology',
-            'Genetics': 'Biology',
-            'Topology': 'Mathematics',
-            'Algebra': 'Mathematics',
-            'Civil Engineering': 'Engineering',
-            'Startup': 'Business',
-            'Stoicism': 'Philosophy',
-            'Logic': 'Philosophy',
-            'Cognitive': 'Psychology',
-            'Indie': 'Gaming',
-            'RPG': 'Gaming',
-            'Movies': 'Cinema',
-            'Wellness': 'Health',
-            'Fitness': 'Health',
-            'Botany': 'Nature',
-            'Wildlife': 'Nature',
-            'Climate': 'Environment',
+            // Science
+            'Physics': 'Science', 'Chemistry': 'Science', 'Biology': 'Science',
+            'Astronomy': 'Science', 'Astrophysics': 'Science',
+            'Neuroscience': 'Biology', 'Genetics': 'Biology', 'Microbiology': 'Biology',
+            'Quantum Mechanics': 'Physics', 'Cosmology': 'Physics', 'Thermodynamics': 'Physics',
+            'Organic Chemistry': 'Chemistry', 'Biochemistry': 'Chemistry',
+
+            // Tech & Eng
+            'Robotics': 'Technology', 'AI': 'Technology', 'Cybersecurity': 'Technology',
+            'Civil Engineering': 'Engineering', 'Mechanical Engineering': 'Engineering', 'Aerospace': 'Engineering',
+
+            // Math
+            'Topology': 'Mathematics', 'Algebra': 'Mathematics', 'Calculus': 'Mathematics', 'Geometry': 'Mathematics',
+
+            // Humanities
+            'History': 'Humanities', 'Philosophy': 'Humanities', 'Literature': 'Humanities',
+            'Stoicism': 'Philosophy', 'Logic': 'Philosophy', 'Ethics': 'Philosophy',
+            'Cognitive': 'Psychology', 'Behavioral': 'Psychology',
+            'Ancient History': 'History', 'Modern History': 'History',
+
+            // Arts
+            'Digital Art': 'Art', 'Painting': 'Art', 'Sculpture': 'Art',
+            'Graphic Design': 'Design', 'UI/UX': 'Design', 'Product Design': 'Design',
+
+            // Lifestyle
+            'Startup': 'Business', 'Economics': 'Business', 'Finance': 'Business',
+            'Indie': 'Gaming', 'RPG': 'Gaming', 'Esports': 'Gaming',
+            'Movies': 'Cinema', 'Documentary': 'Cinema',
+            'Wellness': 'Health', 'Fitness': 'Health', 'Nutrition': 'Health',
+            'Botany': 'Nature', 'Wildlife': 'Nature', 'Conservation': 'Nature',
+            'Climate': 'Environment', 'Sustainability': 'Environment'
         };
 
         let finalDomainId = selectedDomain.id;

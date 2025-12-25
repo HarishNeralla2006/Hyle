@@ -139,12 +139,21 @@ export const initializeSchema = async () => {
                 created_at DATETIME
             )
         `);
-        // Add parent_id to comments for nesting
         if (!(await checkColumnExists('comments', 'parent_id'))) {
             try {
                 await execute('ALTER TABLE comments ADD COLUMN parent_id VARCHAR(255) DEFAULT NULL');
                 console.log("Added parent_id to comments.");
             } catch (e) { console.log("Failed to add parent_id to comments", e); }
+        }
+
+        // FIX: Ensure posts.imageURL can hold Base64 strings (standard TEXT is 64KB, we need LONGTEXT for ~4GB)
+        // Check if we need to upgrade? Just run it.
+        try {
+            await execute('ALTER TABLE posts MODIFY COLUMN imageURL LONGTEXT');
+            console.log("Upgraded posts.imageURL to LONGTEXT.");
+        } catch (e) {
+            // Ignore if already done or not supported in specific SQL dialect, but standard MySQL/TiDB supports this
+            console.log("imageURL upgrade check", e);
         }
 
         console.log("Ensured notifications table.");
