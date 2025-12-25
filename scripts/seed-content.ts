@@ -108,110 +108,111 @@ const DOMAIN_MAP: Record<string, string[]> = {
     'PC Gaming': ['pcgaming', 'Steam'],
     'Indie Games': ['IndieGaming'],
     'Virtual Reality': ['virtualreality', 'oculus'],
+};
 
-    // "Real Person" User Pool
-    const HUMAN_USERS = [
-        { id: 'user_alex', name: 'Alex_Dev', desc: 'Software Engineer & Tech Enthusiast' },
-        { id: 'user_sarah', name: 'SarahExplore', desc: 'Lover of nature and science.' },
-        { id: 'user_mike', name: 'Mike_HistoryBuff', desc: 'Digging into the past.' },
-        { id: 'user_emily', name: 'Emily_Art', desc: 'Digital artist and designer.' },
-        { id: 'user_david', name: 'David_InSpace', desc: 'Amateur astronomer.' },
-        { id: 'user_jess', name: 'Jess_Codes', desc: 'Full stack developer.' },
-        { id: 'user_chris', name: 'Chris_Startup', desc: 'Building the next big thing.' },
-        { id: 'user_anna', name: 'Anna_Psych', desc: 'Understanding the human mind.' },
-        { id: 'user_ryan', name: 'Ryan_Beats', desc: 'Music producer.' },
-        { id: 'user_lisa', name: 'Lisa_Green', desc: 'Sustainability advocate.' },
-        { id: 'user_tom', name: 'Tom_Physics', desc: 'Quantum mechanics nerd.' },
-        { id: 'user_katie', name: 'Katie_Design', desc: 'UX/UI Designer.' },
-        { id: 'user_james', name: 'James_Biz', desc: 'Finance and Economics.' },
-        { id: 'user_sophie', name: 'Sophie_Phil', desc: 'Deep thinker.' },
-        { id: 'user_mark', name: 'Mark_AI', desc: 'Machine Learning Engineer.' },
-        { id: 'user_kyle', name: 'Kyle_Gadgets', desc: 'Tech reviewer.' },
-        { id: 'user_emma', name: 'Emma_Bio', desc: 'Biology researcher.' },
-        { id: 'user_ben', name: 'Ben_Chem', desc: 'Chemistry student.' },
-        { id: 'user_lucy', name: 'Lucy_Wild', desc: 'Wildlife photographer.' },
-        { id: 'user_dan', name: 'Dan_Retro', desc: 'Retro computing fan.' },
-        { id: 'user_olivia', name: 'Olivia_Sketch', desc: 'Illustrator.' },
-        { id: 'user_sam', name: 'Sam_Sound', desc: 'Audiophile.' },
-        { id: 'user_natalie', name: 'Natalie_Stars', desc: 'Space enthusiast.' },
-        { id: 'user_eric', name: 'Eric_Code', desc: 'Python developer.' },
-        { id: 'user_grace', name: 'Grace_Mind', desc: 'Psychology major.' },
-        { id: 'user_robert', name: 'Robert_Past', desc: 'Historical fiction writer.' },
-        { id: 'user_chloe', name: 'Chloe_Market', desc: 'Marketing guru.' },
-        { id: 'user_justin', name: 'Justin_Cloud', desc: 'Cloud Architect.' },
-        { id: 'user_megan', name: 'Megan_Life', desc: 'Life sciences.' },
-        { id: 'user_adam', name: 'Adam_Rocket', desc: 'Aerospace engineer.' }
-    ];
+// "Real Person" User Pool
+const HUMAN_USERS = [
+    { id: 'user_alex', name: 'Alex_Dev', desc: 'Software Engineer & Tech Enthusiast' },
+    { id: 'user_sarah', name: 'SarahExplore', desc: 'Lover of nature and science.' },
+    { id: 'user_mike', name: 'Mike_HistoryBuff', desc: 'Digging into the past.' },
+    { id: 'user_emily', name: 'Emily_Art', desc: 'Digital artist and designer.' },
+    { id: 'user_david', name: 'David_InSpace', desc: 'Amateur astronomer.' },
+    { id: 'user_jess', name: 'Jess_Codes', desc: 'Full stack developer.' },
+    { id: 'user_chris', name: 'Chris_Startup', desc: 'Building the next big thing.' },
+    { id: 'user_anna', name: 'Anna_Psych', desc: 'Understanding the human mind.' },
+    { id: 'user_ryan', name: 'Ryan_Beats', desc: 'Music producer.' },
+    { id: 'user_lisa', name: 'Lisa_Green', desc: 'Sustainability advocate.' },
+    { id: 'user_tom', name: 'Tom_Physics', desc: 'Quantum mechanics nerd.' },
+    { id: 'user_katie', name: 'Katie_Design', desc: 'UX/UI Designer.' },
+    { id: 'user_james', name: 'James_Biz', desc: 'Finance and Economics.' },
+    { id: 'user_sophie', name: 'Sophie_Phil', desc: 'Deep thinker.' },
+    { id: 'user_mark', name: 'Mark_AI', desc: 'Machine Learning Engineer.' },
+    { id: 'user_kyle', name: 'Kyle_Gadgets', desc: 'Tech reviewer.' },
+    { id: 'user_emma', name: 'Emma_Bio', desc: 'Biology researcher.' },
+    { id: 'user_ben', name: 'Ben_Chem', desc: 'Chemistry student.' },
+    { id: 'user_lucy', name: 'Lucy_Wild', desc: 'Wildlife photographer.' },
+    { id: 'user_dan', name: 'Dan_Retro', desc: 'Retro computing fan.' },
+    { id: 'user_olivia', name: 'Olivia_Sketch', desc: 'Illustrator.' },
+    { id: 'user_sam', name: 'Sam_Sound', desc: 'Audiophile.' },
+    { id: 'user_natalie', name: 'Natalie_Stars', desc: 'Space enthusiast.' },
+    { id: 'user_eric', name: 'Eric_Code', desc: 'Python developer.' },
+    { id: 'user_grace', name: 'Grace_Mind', desc: 'Psychology major.' },
+    { id: 'user_robert', name: 'Robert_Past', desc: 'Historical fiction writer.' },
+    { id: 'user_chloe', name: 'Chloe_Market', desc: 'Marketing guru.' },
+    { id: 'user_justin', name: 'Justin_Cloud', desc: 'Cloud Architect.' },
+    { id: 'user_megan', name: 'Megan_Life', desc: 'Life sciences.' },
+    { id: 'user_adam', name: 'Adam_Rocket', desc: 'Aerospace engineer.' }
+];
 
-    // Thematic Bot Personas
-    const PERSONAS = {
-        'NOVA': { id: 'bot_nova', name: 'Nova', desc: 'The Explorer' },
-        'PIXEL': { id: 'bot_pixel', name: 'Pixel', desc: 'The Technologist' },
-        'ATLAS': { id: 'bot_atlas', name: 'Atlas', desc: 'The Historian' },
-        'MUSE': { id: 'bot_muse', name: 'Muse', desc: 'The Artist' },
-        'GAIA': { id: 'bot_gaia', name: 'Gaia', desc: 'The Naturalist' },
-        'FLUX': { id: 'bot_flux', name: 'Flux', desc: 'The Curator' },
-    };
+// Thematic Bot Personas
+const PERSONAS = {
+    'NOVA': { id: 'bot_nova', name: 'Nova', desc: 'The Explorer' },
+    'PIXEL': { id: 'bot_pixel', name: 'Pixel', desc: 'The Technologist' },
+    'ATLAS': { id: 'bot_atlas', name: 'Atlas', desc: 'The Historian' },
+    'MUSE': { id: 'bot_muse', name: 'Muse', desc: 'The Artist' },
+    'GAIA': { id: 'bot_gaia', name: 'Gaia', desc: 'The Naturalist' },
+    'FLUX': { id: 'bot_flux', name: 'Flux', desc: 'The Curator' },
+};
 
-    // -----------------------------------------------------------------------------
-    // MAIN LOGIC
-    // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// MAIN LOGIC
+// -----------------------------------------------------------------------------
 
-    async function main() {
-        console.log("🌱 Starting Content Seeder (Refined - Normalized)...");
+async function main() {
+    console.log("🌱 Starting Content Seeder (Refined - Normalized)...");
 
-if (!process.env.DATABASE_URL) {
-    console.error("❌ Fatal: DATABASE_URL is missing. Make sure .env.local exists or vars are set.");
-    process.exit(1);
-}
+    if (!process.env.DATABASE_URL) {
+        console.error("❌ Fatal: DATABASE_URL is missing. Make sure .env.local exists or vars are set.");
+        process.exit(1);
+    }
 
-const conn = connect({ url: process.env.DATABASE_URL });
+    const conn = connect({ url: process.env.DATABASE_URL });
 
-// Step 0: Normalize Domains (Fix "arts" -> "art")
-await normalizeDomains(conn);
+    // Step 0: Normalize Domains (Fix "arts" -> "art")
+    await normalizeDomains(conn);
 
-if (process.argv.includes('--purge-bots')) {
-    await purgeBotPosts(conn);
-    return;
-}
+    if (process.argv.includes('--purge-bots')) {
+        await purgeBotPosts(conn);
+        return;
+    }
 
-const isBulk = process.argv.includes('--bulk');
-const postsPerDomain = isBulk ? 7 : 1;
+    const isBulk = process.argv.includes('--bulk');
+    const postsPerDomain = isBulk ? 7 : 1;
 
-// Pick domains
-const allDomains = Object.keys(DOMAIN_MAP);
+    // Pick domains
+    const allDomains = Object.keys(DOMAIN_MAP);
 
-// PRIORITY SORT: Prioritize specific sub-domains (Capitalized) over generic ones (lowercase)
-// This ensures "Quantum Mechanics" is processed before "science".
-// "First Preference" rule implementation.
-allDomains.sort((a, b) => {
-    const isASpecific = /^[A-Z]/.test(a); // Starts with Uppercase (e.g. Astrophysics)
-    const isBSpecific = /^[A-Z]/.test(b);
-    if (isASpecific && !isBSpecific) return -1; // A comes first
-    if (!isASpecific && isBSpecific) return 1;  // B comes first
-    return 0;
-});
+    // PRIORITY SORT: Prioritize specific sub-domains (Capitalized) over generic ones (lowercase)
+    // This ensures "Quantum Mechanics" is processed before "science".
+    // "First Preference" rule implementation.
+    allDomains.sort((a, b) => {
+        const isASpecific = /^[A-Z]/.test(a); // Starts with Uppercase (e.g. Astrophysics)
+        const isBSpecific = /^[A-Z]/.test(b);
+        if (isASpecific && !isBSpecific) return -1; // A comes first
+        if (!isASpecific && isBSpecific) return 1;  // B comes first
+        return 0;
+    });
 
-const selectedDomains = isBulk ? allDomains : allDomains.slice(0, 5); // Increased non-bulk limit slightly
+    const selectedDomains = isBulk ? allDomains : allDomains.slice(0, 5); // Increased non-bulk limit slightly
 
-console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Targeting ~${selectedDomains.length * postsPerDomain} new posts)`);
+    console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Targeting ~${selectedDomains.length * postsPerDomain} new posts)`);
 
-// Ensure Human Profiles Exist
-await ensureHumanProfiles(conn);
+    // Ensure Human Profiles Exist
+    await ensureHumanProfiles(conn);
 
-// PARALLEL BATCH PROCESSING (3 at a time to be safe)
-const BATCH_SIZE = 5;
-for (let i = 0; i < selectedDomains.length; i += BATCH_SIZE) {
-    const batch = selectedDomains.slice(i, i + BATCH_SIZE);
-    console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(selectedDomains.length / BATCH_SIZE)}: [${batch.join(', ')}]`);
+    // PARALLEL BATCH PROCESSING (3 at a time to be safe)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < selectedDomains.length; i += BATCH_SIZE) {
+        const batch = selectedDomains.slice(i, i + BATCH_SIZE);
+        console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(selectedDomains.length / BATCH_SIZE)}: [${batch.join(', ')}]`);
 
-    await Promise.all(batch.map(domain => processDomain(conn, domain, postsPerDomain)));
+        await Promise.all(batch.map(domain => processDomain(conn, domain, postsPerDomain)));
 
-    // Small breather between batches
-    await new Promise(r => setTimeout(r, 2000));
-}
+        // Small breather between batches
+        await new Promise(r => setTimeout(r, 2000));
+    }
 
-console.log("✅ Seeding completed.");
+    console.log("✅ Seeding completed.");
 }
 
 async function normalizeDomains(conn: any) {
