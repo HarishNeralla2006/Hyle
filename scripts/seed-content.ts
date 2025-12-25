@@ -78,12 +78,9 @@ async function main() {
 
     const conn = connect({ url: process.env.DATABASE_URL });
 
-    // MASTER FIX: Run all fixes
-    if (process.argv.includes('--fix-all')) {
-        await ensureBotProfiles(conn);
-        await fixLegacyPosts(conn);
-        await fixLegacyImages(conn);
-        await fixLegacyContent(conn);
+    // PURGE MODE: Delete all bot posts
+    if (process.argv.includes('--purge-bots')) {
+        await purgeBotPosts(conn);
         return;
     }
 
@@ -132,100 +129,26 @@ async function ensureBotProfiles(conn: any) {
     }
 }
 
-async function fixLegacyPosts(conn: any) {
-    console.log("🛠️ Fixing Legacy Posts (Assigning new Personas)...");
-    const OLD_BOT_IDS = ['bot_curator', 'bot_news', 'bot_spark', 'bot_flux'];
+async function purgeBotPosts(conn: any) {
+    console.log("� PURGING ALL BOT POSTS...");
 
-    for (const [domain, subreddits] of Object.entries(DOMAIN_MAP)) {
-        const targetBot = DOMAIN_BOT_MAP[domain] || PERSONAS.FLUX;
-        try {
-            const query = `
-                UPDATE posts 
-                SET user_id = ? 
-                WHERE domain_id = ? 
-                AND user_id IN ('${OLD_BOT_IDS.join("','")}')
-           `;
-            await conn.execute(query, [targetBot.id, domain]);
-            //    console.log(`   ✅ Updated ${domain} -> ${targetBot.name}`);
-        } catch (e: any) {
-            console.error(`   ❌ Failed to update ${domain}:`, e.message);
-        }
-    }
-}
+    // Include current bots AND legacy bots
+    const ALL_BOT_IDS = [
+        ...Object.values(PERSONAS).map(p => p.id),
+        'bot_curator', 'bot_news', 'bot_spark', 'bot_flux'
+    ];
 
-async function fixLegacyImages(conn: any) {
-    console.log("🖼️  Retroactively Compressing Bot Images...");
-
-    const BOT_IDS = Object.values(PERSONAS).map(p => p.id);
-    const placeholders = BOT_IDS.map(() => '?').join(',');
+    const placeholders = ALL_BOT_IDS.map(() => '?').join(',');
 
     try {
-        const rows = await conn.execute(`
-            SELECT id, imageURL FROM posts 
-            WHERE imageURL IS NOT NULL 
-            AND imageURL NOT LIKE 'https://wsrv.nl%' 
-            AND user_id IN (${placeholders})
-        `, BOT_IDS);
-
-        console.log(`   🔍 Found ${rows.length} uncompressed images.`);
-
-        for (const row of rows) {
-            const originalUrl = row.imageURL;
-            if (!originalUrl) continue;
-
-            const encodedUrl = encodeURIComponent(originalUrl);
-            // 50KB Target: Width 600, Quality 60, WebP
-            const newUrl = `https://wsrv.nl/?url=${encodedUrl}&w=600&q=60&output=webp`;
-
-            await conn.execute('UPDATE posts SET imageURL = ? WHERE id = ?', [newUrl, row.id]);
-            console.log(`      ✨ Compressed: ${row.id}`);
-        }
-        console.log("✅ Image Compression Complete.");
-
-    } catch (e: any) {
-        console.error("❌ Failed to fix images:", e.message);
-    }
-}
-
-async function fixLegacyContent(conn: any) {
-    console.log("📝 Refining Content Style (Removing Sources, Full Length)...");
-
-    const BOT_IDS = Object.values(PERSONAS).map(p => p.id);
-    const placeholders = BOT_IDS.map(() => '?').join(',');
-
-    try {
-        const rows = await conn.execute(`
-            SELECT id, content FROM posts 
+        const result = await conn.execute(`
+            DELETE FROM posts 
             WHERE user_id IN (${placeholders})
-        `, BOT_IDS);
+        `, ALL_BOT_IDS);
 
-        console.log(`   🔍 Optimizing content for ${rows.length} posts...`);
-        let fixedCount = 0;
-
-        for (const row of rows) {
-            let content = row.content || "";
-            let originalContent = content;
-
-            // 1. Remove "Source: ..." or "[Source](...)"
-            content = content.replace(/\n\nSource: https?:\/\/.*/i, '');
-            content = content.replace(/\n\n\[Source\]\(.*?\)/gi, '');
-
-            // 2. Remove any remaining raw markdown artifacts
-            content = content.replace(/\*\*/g, '').replace(/__/g, '');
-
-            // 3. NO TRUNCATION - We keep existing text as is.
-            // We cannot recover "lost" text from previous truncations since we deleted source links.
-            // But we ensure we don't truncate any "full" texts that might exist.
-
-            if (content !== originalContent) {
-                await conn.execute('UPDATE posts SET content = ? WHERE id = ?', [content, row.id]);
-                fixedCount++;
-            }
-        }
-        console.log(`✅ Content Refinement Complete. Updated ${fixedCount} posts.`);
-
+        console.log(`✅ Deleted ${result.rowsAffected} bot posts. The feed is clean.`);
     } catch (e: any) {
-        console.error("❌ Failed to fix content:", e.message);
+        console.error("❌ Failed to purge posts:", e.message);
     }
 }
 
@@ -266,11 +189,9 @@ async function processDomain(conn: any, domainId: string, limit: number) {
 
             let finalContent = `${cleanTitle}`;
             if (post.selftext) {
-                // NO LIMITS: We use the full selftext from Reddit
-                // Just minimal cleanup if needed
+                // Full Content
                 finalContent += `\n\n${post.selftext}`;
             }
-            // NO SOURCE LINK ADDED
 
             // IMAGE PROXY (Compression)
             let imageUrl = null;
