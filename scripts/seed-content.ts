@@ -188,12 +188,13 @@ async function fixLegacyImages(conn: any) {
 }
 
 async function fixLegacyContent(conn: any) {
-    console.log("📝 Refining Content Style (Removing Sources, Refreshing Text)...");
+    console.log("📝 Refining Content Style (Removing Sources, Increasing Length)...");
 
-    // We want to force-refresh ALL bot posts content to match the new "No Source / Concise" rule,
-    // not just the broken markdown ones. However, we need the original data to do that perfectly.
-    // Since we don't have the original Reddit JSON for old posts anymore, we have to do best-effort cleanup
-    // on the string we have stored.
+    // NOTE: For existing posts, we ONLY have the truncated/modified content in TiDB. 
+    // We CANNOT magically "expand" them back to full Reddit posts without re-fetching from source.
+    // However, since we don't store the original Source URL anymore (we deleted it!), 
+    // we can only clean up formatting here. 
+    // For *NEW* posts via `processDomain`, we will use the larger limit.
 
     const BOT_IDS = Object.values(PERSONAS).map(p => p.id);
     const placeholders = BOT_IDS.map(() => '?').join(',');
@@ -218,19 +219,8 @@ async function fixLegacyContent(conn: any) {
             // 2. Remove any remaining raw markdown artifacts
             content = content.replace(/\*\*/g, '').replace(/__/g, '');
 
-            // 3. Truncate long bodies (Simulating "rewrite to small")
-            // We split by double newline to separate Title from Body
-            const parts = content.split('\n\n');
-            if (parts.length > 2) {
-                // Determine max length for body
-                const title = parts[0];
-                let body = parts.slice(1).join('\n\n');
-
-                if (body.length > 300) {
-                    body = body.substring(0, 297) + '...';
-                }
-                content = `${title}\n\n${body}`;
-            }
+            // 3. Ensure we don't have ellipses if it's short, but we can't un-truncate old posts
+            // without new data. We just accept them as is for now, but strict clean.
 
             if (content !== originalContent) {
                 await conn.execute('UPDATE posts SET content = ? WHERE id = ?', [content, row.id]);
@@ -275,17 +265,22 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             const wantsImage = Math.random() < 0.30;
             if (wantsImage && !hasImage) continue;
 
-            // FORMATTING (Plain Text, No Source, Concise)
+            // FORMATTING (Plain Text, No Source, LARGER CONTENT)
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
-            // Clean markdown chars
             cleanTitle = cleanTitle.replace(/\*\*/g, '').replace(/\*/g, '').replace(/__/g, '');
 
             let finalContent = `${cleanTitle}`;
             if (post.selftext) {
                 let body = post.selftext;
-                // Truncate logic for new posts too
-                if (body.length > 300) {
-                    body = body.substring(0, 297) + '...';
+                // INCREASED LIMIT: 800 chars (approx 100-150 words) - "Bigger"
+                if (body.length > 800) {
+                    // Try to cut at end of sentence
+                    let cut = body.substring(0, 800);
+                    const lastPeriod = cut.lastIndexOf('.');
+                    if (lastPeriod > 100) {
+                        cut = cut.substring(0, lastPeriod + 1);
+                    }
+                    body = cut + '...';
                 }
                 finalContent += `\n\n${body}`;
             }
