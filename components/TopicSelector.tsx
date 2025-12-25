@@ -24,6 +24,12 @@ const TOPICS = [
     { id: 'ai', label: 'AI', color: 'from-fuchsia-400 to-purple-300' },
     { id: 'space', label: 'Space', color: 'from-slate-400 to-gray-300' },
     { id: 'nature', label: 'Nature', color: 'from-emerald-400 to-green-300' },
+    // Expansion
+    { id: 'gaming', label: 'Gaming', color: 'from-violet-500 to-purple-400' },
+    { id: 'cinema', label: 'Cinema', color: 'from-red-500 to-orange-400' },
+    { id: 'food', label: 'Food', color: 'from-orange-400 to-yellow-300' },
+    { id: 'travel', label: 'Travel', color: 'from-cyan-400 to-sky-300' },
+    { id: 'health', label: 'Health', color: 'from-teal-400 to-emerald-300' },
 ];
 
 const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {

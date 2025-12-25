@@ -14,22 +14,29 @@ import { randomUUID } from 'crypto';
 
 // Map Spark Domains to Subreddits
 // NOTE: Keys MUST match the ID in TopicSelector.tsx (Singular mostly)
+// Map Spark Domains to Subreddits (Wide Net Strategy)
 const DOMAIN_MAP: Record<string, string[]> = {
-    'science': ['science', 'EverythingScience', 'biology'],
-    'physics': ['Physics', 'astrophysics', 'QuantumPhysics'],
-    'chemistry': ['chemistry', 'ChemicalEngineering'],
-    'business': ['business', 'startups', 'economics', 'finance'],
-    'technology': ['technology', 'gadgets', 'futurology', 'hardware'],
-    'art': ['Art', 'DigitalArt', 'Museum', 'ConceptArt'],
-    'design': ['Design', 'web_design', 'graphic_design', 'UI_Design'],
-    'music': ['Music', 'ListenToThis', 'WeAreTheMusicMakers'],
-    'history': ['history', 'AskHistorians', '100yearsago'],
-    'philosophy': ['philosophy', 'Stoicism', 'Existentialism'],
-    'psychology': ['psychology', 'socialpsychology', 'Neuropsychology'],
-    'coding': ['programming', 'coding', 'webdev', 'javascript'],
-    'ai': ['artificial', 'MachineLearning', 'OpenAI', 'Singularity'],
-    'space': ['space', 'nasa', 'SpaceX', 'astronomy'],
-    'nature': ['nature', 'EarthPorn', 'wildlife', 'botany'],
+    'science': ['science', 'EverythingScience', 'biology', 'space', 'Physics'],
+    'physics': ['Physics', 'astrophysics', 'QuantumPhysics', 'Cosmology'],
+    'chemistry': ['chemistry', 'ChemicalEngineering', 'chemhelp'],
+    'business': ['business', 'startups', 'economics', 'finance', 'Entrepreneur'],
+    'technology': ['technology', 'gadgets', 'futurology', 'hardware', 'tech'],
+    'art': ['Art', 'DigitalArt', 'Museum', 'ConceptArt', 'Illustration', 'Oilpainting', 'StreetArt'],
+    'design': ['Design', 'web_design', 'graphic_design', 'UI_Design', 'userexperience', 'architecture'],
+    'music': ['Music', 'ListenToThis', 'WeAreTheMusicMakers', 'ElectronicMusic', 'Jazz'],
+    'history': ['history', 'AskHistorians', '100yearsago', 'HistoryPorn', 'ArtefactPorn'],
+    'philosophy': ['philosophy', 'Stoicism', 'Existentialism', 'PhilosophyofScience'],
+    'psychology': ['psychology', 'socialpsychology', 'Neuropsychology', 'CognitiveScience'],
+    'coding': ['programming', 'coding', 'webdev', 'javascript', 'Python', 'learnprogramming'],
+    'ai': ['artificial', 'MachineLearning', 'OpenAI', 'Singularity', 'ArtificialInteligence'],
+    'space': ['space', 'nasa', 'SpaceX', 'astronomy', 'Astrophotography'],
+    'nature': ['nature', 'EarthPorn', 'wildlife', 'botany', 'NatureIsFuckingLit'],
+    // New Expansion
+    'gaming': ['gaming', 'Games', 'pcgaming', 'IndieGaming', 'RetroGaming'],
+    'cinema': ['movies', 'cinema', 'Film', 'MovieDetails', 'TrueFilm'],
+    'food': ['food', 'FoodPorn', 'Cooking', 'Baking', 'Eats'],
+    'travel': ['travel', 'TravelNoPics', 'solotravel', 'backpacking', 'Shoestring'],
+    'health': ['health', 'Fitness', 'nutrition', 'HealthyFood', 'running'],
 };
 
 // "Real Person" User Pool
@@ -110,8 +117,16 @@ async function main() {
     // Ensure Human Profiles Exist
     await ensureHumanProfiles(conn);
 
-    for (const domain of selectedDomains) {
-        await processDomain(conn, domain, postsPerDomain);
+    // PARALLEL BATCH PROCESSING (3 at a time to be safe)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < selectedDomains.length; i += BATCH_SIZE) {
+        const batch = selectedDomains.slice(i, i + BATCH_SIZE);
+        console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(selectedDomains.length / BATCH_SIZE)}: [${batch.join(', ')}]`);
+
+        await Promise.all(batch.map(domain => processDomain(conn, domain, postsPerDomain)));
+
+        // Small breather between batches
+        await new Promise(r => setTimeout(r, 2000));
     }
 
     console.log("✅ Seeding completed.");
@@ -167,11 +182,16 @@ async function processDomain(conn: any, domainId: string, limit: number) {
     const subreddits = DOMAIN_MAP[domainId];
     const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
 
-    console.log(`   Processing ${domainId} -> r/${subreddit}`);
+    // ROTATE SORT METHOD: Mix of 'hot', 'new', and 'top' for variety
+    const modes = ['hot', 'hot', 'new', 'top']; // Bias towards hot
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+    const timeRange = mode === 'top' ? (Math.random() > 0.5 ? 'week' : 'month') : 'day'; // If top, look further back
+
+    console.log(`   Processing ${domainId} -> r/${subreddit} (${mode}/${timeRange})`);
 
     try {
-        const fetchLimit = limit + 30; // High buffer for filtering
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${fetchLimit}`, {
+        const fetchLimit = limit + 50; // Increased buffer
+        const response = await fetch(`https://www.reddit.com/r/${subreddit}/${mode}.json?t=${timeRange}&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
         });
 
