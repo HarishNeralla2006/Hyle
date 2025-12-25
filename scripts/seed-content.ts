@@ -79,6 +79,13 @@ async function main() {
 
     const conn = connect({ url: process.env.DATABASE_URL });
 
+    // FIX MODE: Update existing posts to use the new personas
+    if (process.argv.includes('--fix')) {
+        await ensureBotProfiles(conn);
+        await fixLegacyPosts(conn);
+        return;
+    }
+
     // BULK MODE: If running manually, we might want to fill the DB.
     // Standard run: 3 domains. Bulk run: All domains, 3 posts each (~45 posts).
     const isBulk = process.argv.includes('--bulk');
@@ -102,8 +109,6 @@ async function main() {
 
 async function ensureBotProfiles(conn: any) {
     // Upsert the bot users so they have names/avatars in the DB
-    // Since we can't easily do ON DUPLICATE KEY UPDATE in all SQL dialects cleanly via this driver,
-    // we'll just try INSERT IGNORE or similar logic if supported, or just ignore errors.
     console.log("   Checking Bot Personas...");
     const bots = Object.values(PERSONAS);
 
@@ -125,6 +130,33 @@ async function ensureBotProfiles(conn: any) {
             // Likely already exists or syntax diff, ignore
         }
     }
+}
+
+async function fixLegacyPosts(conn: any) {
+    console.log("🛠️ Fixing Legacy Posts (Assigning new Personas)...");
+
+    // Old generic bot IDs to replace
+    const OLD_BOT_IDS = ['bot_curator', 'bot_news', 'bot_spark', 'bot_flux'];
+
+    // Iterate over domains and assign the correct bot
+    for (const [domain, subreddits] of Object.entries(DOMAIN_MAP)) {
+        const targetBot = DOMAIN_BOT_MAP[domain] || PERSONAS.FLUX;
+
+        try {
+            const query = `
+                UPDATE posts 
+                SET user_id = ? 
+                WHERE domain_id = ? 
+                AND user_id IN ('${OLD_BOT_IDS.join("','")}')
+           `;
+
+            await conn.execute(query, [targetBot.id, domain]);
+            console.log(`   ✅ Updated ${domain} -> ${targetBot.name}`);
+        } catch (e: any) {
+            console.error(`   ❌ Failed to update ${domain}:`, e.message);
+        }
+    }
+    console.log("✨ Migration Complete.");
 }
 
 async function processDomain(conn: any, domainId: string, limit: number) {
@@ -175,7 +207,6 @@ async function processDomain(conn: any, domainId: string, limit: number) {
             const postId = randomUUID();
 
             // CLEANUP TITLE
-            // Remove "[OC]", "(2024)", etc to make it look cleaner
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
 
             const content = `**${cleanTitle}**\n\n${post.selftext || ''}\n\n[Source](https://reddit.com${post.permalink})`;
