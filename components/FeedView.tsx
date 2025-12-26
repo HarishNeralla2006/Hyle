@@ -309,6 +309,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
 
             // Fetch comments for these posts
             const postIds = rawPosts.map((p: any) => p.id);
+            let comments: any[] = [];
             if (postIds.length > 0) {
                 const placeholders = postIds.map(() => '?').join(',');
                 const commentsSql = `
@@ -318,16 +319,21 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     WHERE c.post_id IN (${placeholders})
                     ORDER BY c.created_at ASC
                 `;
-                const comments = await execute(commentsSql, postIds);
-
-                const postsWithComments = rawPosts.map((post: any) => ({
-                    ...post,
-                    comments: comments.filter((c: any) => c.post_id === post.id).map((c: any) => ({ ...c, profiles: { username: c.username, photoURL: c.photoURL } }))
-                }));
-                setPosts(postsWithComments);
-            } else {
-                setPosts(rawPosts.map((p: any) => ({ ...p, comments: [] })));
+                comments = await execute(commentsSql, postIds);
             }
+
+            const postsWithComments = rawPosts.map((post: any) => ({
+                ...post,
+                profiles: {
+                    username: post.username,
+                    photoURL: post.photoURL
+                },
+                comments: postIds.length > 0 ? comments.filter((c: any) => c.post_id === post.id).map((c: any) => ({
+                    ...c,
+                    profiles: { username: c.username, photoURL: c.photoURL }
+                })) : []
+            }));
+            setPosts(postsWithComments);
         } catch (err: any) {
             console.error(err);
             setError("Signal lost. Reconnecting...");
