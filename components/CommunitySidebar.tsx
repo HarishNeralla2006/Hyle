@@ -174,7 +174,7 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
                 <div className="mt-4 pt-4 border-t border-white/5">
                     <button onClick={() => setIsCreating(true)} className="w-full py-3 rounded-xl border border-dashed border-white/20 text-slate-400 hover:text-white hover:border-white/40 transition-all text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        Create Frequency
+                        Create Frequency Band
                     </button>
                 </div>
             </div>

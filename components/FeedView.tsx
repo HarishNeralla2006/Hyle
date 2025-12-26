@@ -7,9 +7,13 @@ import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons'
 import PostView from './PostView';
 import { RichTextRenderer } from './RichTextRenderer';
 import CommunitySidebar from './CommunitySidebar';
-import { Community } from '../lib/communities';
+import { fetchCommunities, joinCommunity, leaveCommunity, checkMembership, getMemberCount, Community } from '../lib/communities';
 import TopicSelector from './TopicSelector';
 import { normalizeSubTopic } from '../lib/normalization';
+
+// ... (existing imports)
+
+
 
 // Helper to organize comments into threads
 const organizeComments = (comments: Comment[]) => {
@@ -232,6 +236,33 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
     const [activeCommunity, setActiveCommunity] = useState<Community | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Membership State
+    const [isMember, setIsMember] = useState(false);
+    const [memberCount, setMemberCount] = useState(0);
+
+    useEffect(() => {
+        if (activeCommunity && user) {
+            checkMembership(activeCommunity.id, user.uid).then(setIsMember);
+            getMemberCount(activeCommunity.id).then(setMemberCount);
+        } else {
+            setIsMember(false);
+            setMemberCount(0);
+        }
+    }, [activeCommunity, user]);
+
+    const handleJoinToggle = async () => {
+        if (!activeCommunity || !user) return;
+        if (isMember) {
+            await leaveCommunity(activeCommunity.id, user.uid);
+            setIsMember(false);
+            setMemberCount(c => Math.max(0, c - 1));
+        } else {
+            await joinCommunity(activeCommunity.id, user.uid);
+            setIsMember(true);
+            setMemberCount(c => c + 1);
+        }
+    };
+
     const fetchFeed = useCallback(async () => {
         if (!user) return;
         setLoading(true);
@@ -256,19 +287,19 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     const tagParams = activeCommunity.tags.flatMap(t => [`%${t.toLowerCase()}%`, `%${t.toLowerCase()}%`]);
 
                     sql = `
-                        SELECT 
-                            p.*, 
-                            u.username, 
-                            u.photoURL,
-                            (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
-                            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
-                            EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
-                        FROM posts p 
-                        LEFT JOIN profiles u ON p.user_id = u.id 
-                        WHERE ${whereClause}
-                        ORDER BY p.created_at DESC
-                        LIMIT 50
-                    `;
+                SELECT
+                p.*,
+                u.username,
+                u.photoURL,
+                (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+                EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
+                FROM posts p
+                LEFT JOIN profiles u ON p.user_id = u.id
+                WHERE ${whereClause}
+                ORDER BY p.created_at DESC
+                LIMIT 50
+                `;
                     params = [user.uid, ...tagParams];
                 }
             } else {
@@ -302,18 +333,21 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                 const queryParams = finalTags.flatMap(t => [t, `%#${t}%`]);
 
                 sql = `
-                    SELECT 
-                        p.*, 
-                        u.username, 
-                        u.photoURL,
-                        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
-                        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
-                        EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
-                    FROM posts p 
-                    LEFT JOIN profiles u ON p.user_id = u.id 
-                    WHERE ${queryWhere}
-                    ORDER BY p.created_at DESC
-                    LIMIT 50
+                SELECT
+                p.*,
+                u.username,
+                u.photoURL,
+                (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+                EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
+                FROM posts p
+                LEFT JOIN profiles u ON p.user_id = u.id
+                WHERE ${queryWhere}
+                ORDER BY
+                (u.id IS NOT NULL) DESC,
+                (like_count + comment_count) DESC,
+                p.created_at DESC
+                LIMIT 50
                 `;
 
                 params = [user.uid, ...queryParams];
@@ -327,11 +361,11 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
             if (postIds.length > 0) {
                 const placeholders = postIds.map(() => '?').join(',');
                 const commentsSql = `
-                    SELECT c.*, p.username, p.photoURL 
-                    FROM comments c
-                    LEFT JOIN profiles p ON c.user_id = p.id
-                    WHERE c.post_id IN (${placeholders})
-                    ORDER BY c.created_at ASC
+                SELECT c.*, p.username, p.photoURL
+                FROM comments c
+                LEFT JOIN profiles p ON c.user_id = p.id
+                WHERE c.post_id IN (${placeholders})
+                ORDER BY c.created_at ASC
                 `;
                 comments = await execute(commentsSql, postIds);
             }
@@ -479,49 +513,97 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     </div>
 
                     {/* Feed Content */}
-                    <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start">
+                    <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start w-full max-w-4xl px-4">
 
-                        {/* Header Container */}
-                        <div className="flex items-center justify-center space-x-3 mb-1 md:mb-0 relative w-full md:w-auto">
+                        {/* Floating Sidebar Toggle - Always Visible */}
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="fixed top-20 left-4 md:left-8 p-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-indigo-400 hover:text-white hover:bg-indigo-600 transition-all z-30 shadow-lg group"
+                            title="Open Frequencies"
+                        >
+                            <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                        </button>
 
-                            {/* Sidebar Toggle Button (Visible on both Mobile and Desktop now) */}
-                            <button
-                                onClick={() => setIsSidebarOpen(true)}
-                                className="absolute left-0 -ml-2 md:-ml-8 p-2 text-indigo-400 hover:text-white transition-colors"
-                                title="Open Frequencies"
-                            >
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg>
-                            </button>
+                        {/* Community Header Card */}
+                        <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4">
 
-                            {/* Icon */}
-                            <div className="hidden md:block p-3 bg-white/5 rounded-full border border-white/10 animate-pulse-slow">
-                                <GlobeIcon className="w-6 h-6 text-indigo-400" />
+                            {/* Decorative Blur */}
+                            <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px]"></div>
+
+                            {/* Icon / Avatar */}
+                            <div className="relative group shrink-0">
+                                <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden shadow-2xl bg-[#1a1a1a] flex items-center justify-center border border-white/5">
+                                    {activeCommunity?.icon ? (
+                                        <img src={activeCommunity.icon} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-4xl md:text-5xl font-black text-indigo-500/50">
+                                            {activeCommunity ? activeCommunity.name.charAt(0) : "F"}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Customize Feed Button */}
-                            {!activeCommunity && (
-                                <button
-                                    onClick={() => setShowTopicSelector(true)}
-                                    className="p-2 rounded-full hover:bg-white/10 text-slate-500 hover:text-white transition-colors"
-                                    title="Customize Interests"
-                                >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                                </button>
-                            )}
+                            {/* Info & Actions */}
+                            <div className="flex-1 z-10 w-full text-center md:text-left">
+                                <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-4 gap-4">
+                                    <div>
+                                        <div className="flex items-center justify-center md:justify-start space-x-3 mb-1">
+                                            <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight font-['Inter']">
+                                                {activeCommunity ? activeCommunity.name : "Your Feed"}
+                                            </h1>
+                                            {activeCommunity && <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-black uppercase tracking-wider">BAND</span>}
+                                        </div>
+                                        <p className="text-sm md:text-lg font-medium text-slate-400 leading-snug max-w-md mx-auto md:mx-0">
+                                            {activeCommunity ? activeCommunity.description || `Transmitting frequency: ${activeCommunity.tags.join(', ')}` : "Curated frequency from all spheres."}
+                                        </p>
+                                    </div>
 
-                            <div className="flex flex-col text-center md:text-left">
-                                <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter italic">
-                                    {activeCommunity
-                                        ? activeCommunity.name
-                                        : "Your Feed"
-                                    }
-                                </h1>
-                                <p className="text-slate-500 text-xs md:text-sm hidden md:block">
-                                    {activeCommunity
-                                        ? `Transmitting frequency: ${activeCommunity.tags.join(', ')}`
-                                        : "Curated transmissions from your selected spheres."
-                                    }
-                                </p>
+                                    {/* Action Buttons */}
+                                    {activeCommunity && (
+                                        <div className="flex space-x-3">
+                                            <button
+                                                onClick={handleJoinToggle}
+                                                className={`px-6 py-2.5 rounded-xl font-bold shadow-lg transition-transform active:scale-95 border border-white/10 text-xs uppercase tracking-wide ${isMember ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/50' : 'bg-white text-black hover:bg-indigo-50'}`}
+                                            >
+                                                {isMember ? 'Joined' : 'Join'}
+                                            </button>
+                                            <button className="p-2.5 rounded-xl border border-white/20 hover:bg-white/5 transition-colors text-white group relative">
+                                                <svg className="w-5 h-5 group-hover:text-yellow-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                                {/* Bell Badge Placeholder */}
+                                                <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Stats Row */}
+                                <div className="flex items-center justify-center md:justify-start space-x-8 md:space-x-12 border-t border-white/5 pt-4">
+                                    <div className="text-center md:text-left group cursor-pointer">
+                                        <div className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider group-hover:text-white transition-colors">Members</div>
+                                        <div className="text-xl md:text-2xl font-black font-['Inter'] text-white">
+                                            {activeCommunity ? memberCount : "All"}
+                                        </div>
+                                    </div>
+                                    <div className="text-center md:text-left">
+                                        <div className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider">Online</div>
+                                        <div className="text-xl md:text-2xl font-black font-['Inter'] text-green-500 flex items-center justify-center md:justify-start gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                            {activeCommunity ? "42" : "-"}
+                                        </div>
+                                    </div>
+
+                                    {/* Customize Feed Button (Only when no community) */}
+                                    {!activeCommunity && (
+                                        <button
+                                            onClick={() => setShowTopicSelector(true)}
+                                            className="ml-auto p-2 rounded-full hover:bg-white/10 text-slate-500 hover:text-white transition-colors flex items-center gap-2"
+                                            title="Customize Interests"
+                                        >
+                                            <span className="text-xs font-bold uppercase tracking-wider">Customize</span>
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -546,8 +628,15 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                             <p className="text-slate-500 text-sm max-w-xs mx-auto">This frequency is quiet. Be the first to broadcast.</p>
                         </div>
                     ) : (
-                        posts.map(post => (
-                            <div key={post.id} className="snap-center">
+                        posts.map((post, index) => (
+                            <div
+                                key={post.id}
+                                className="snap-center sticky top-24 md:top-32 transition-all duration-500"
+                                style={{
+                                    zIndex: 10 + index,
+                                    paddingBottom: '20px'
+                                }}
+                            >
                                 <PostCard
                                     post={post}
                                     onToggleLike={() => handleToggleLike(post)}

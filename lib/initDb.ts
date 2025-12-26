@@ -147,6 +147,18 @@ export const initializeSchema = async () => {
             } catch (e) { console.log("Failed to add parent_id to comments", e); }
         }
 
+        // Community Members (Join/Follow)
+        await execute(`
+            CREATE TABLE IF NOT EXISTS community_members (
+                community_id VARCHAR(255),
+                user_id VARCHAR(255),
+                role VARCHAR(20) DEFAULT 'member',
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (community_id, user_id)
+            )
+        `);
+        console.log("Ensured community_members table.");
+
         console.log("Ensured notifications table.");
 
     } catch (error) {
