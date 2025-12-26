@@ -1,5 +1,5 @@
 
-
+import { createHash } from 'crypto';
 
 // 1. Synonym Map: Hardcoded knowledge of identical concepts
 export const SYNONYM_MAP: Record<string, string> = {
