@@ -632,15 +632,8 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                             <p className="text-slate-500 text-sm max-w-xs mx-auto">This frequency is quiet. Be the first to broadcast.</p>
                         </div>
                     ) : (
-                        posts.map((post, index) => (
-                            <div
-                                key={post.id}
-                                className="snap-center sticky top-24 md:top-32 transition-all duration-500"
-                                style={{
-                                    zIndex: 10 + index,
-                                    paddingBottom: '20px'
-                                }}
-                            >
+                        posts.map(post => (
+                            <div key={post.id} className="snap-center mb-6">
                                 <PostCard
                                     post={post}
                                     onToggleLike={() => handleToggleLike(post)}
@@ -649,7 +642,6 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                                     onDeleteComment={(cid) => handleDeleteComment(post.id, cid)}
                                     currentUserId={user?.uid}
                                     onUserClick={(uid) => onViewChange({ type: ViewType.Profile, userId: uid })}
-                                // Fix: onUserClick should map to correct profile view usage
                                 />
                             </div>
                         ))
