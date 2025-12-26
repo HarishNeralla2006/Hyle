@@ -3,14 +3,14 @@ name: Content Seeder
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Run every 6 hours
+    - cron: '0 */6 * * *' # Startup time: At minute 0 of every 6th hour (12:00, 6:00, etc.)
   workflow_dispatch: # Allow manual trigger
 
 jobs:
   seed:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL: "${{ secrets.DATABASE_URL }}"
     
     steps:
     - uses: actions/checkout@v3
