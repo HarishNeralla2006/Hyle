@@ -524,42 +524,58 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                             <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg>
                         </button>
 
-                        {/* Community Header Card */}
-                        <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4">
-
-                            {/* Decorative Blur */}
-                            <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px]"></div>
-
-                            {/* Icon / Avatar */}
-                            <div className="relative group shrink-0">
-                                <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden shadow-2xl bg-[#1a1a1a] flex items-center justify-center border border-white/5">
-                                    {activeCommunity?.icon ? (
-                                        <img src={activeCommunity.icon} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-4xl md:text-5xl font-black text-indigo-500/50">
-                                            {activeCommunity ? activeCommunity.name.charAt(0) : "F"}
-                                        </span>
-                                    )}
+                        {/* Conditional Header Rendering */}
+                        {!activeCommunity ? (
+                            // GLOBAL FEED (Simple Restoration)
+                            <div className="w-full flex items-center justify-between py-6 px-2 md:px-0">
+                                <div>
+                                    <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Signal</h1>
+                                    <p className="text-slate-500 font-medium text-sm">Your universal feed.</p>
                                 </div>
+                                <button
+                                    onClick={() => setShowTopicSelector(true)}
+                                    className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+                                >
+                                    <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Customize</span>
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                </button>
                             </div>
+                        ) : (
+                            // COMMUNITY VIEW (Profile Style)
+                            <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4">
 
-                            {/* Info & Actions */}
-                            <div className="flex-1 z-10 w-full text-center md:text-left">
-                                <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-4 gap-4">
-                                    <div>
-                                        <div className="flex items-center justify-center md:justify-start space-x-3 mb-1">
-                                            <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight font-['Inter']">
-                                                {activeCommunity ? activeCommunity.name : "Your Feed"}
-                                            </h1>
-                                            {activeCommunity && <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-black uppercase tracking-wider">BAND</span>}
-                                        </div>
-                                        <p className="text-sm md:text-lg font-medium text-slate-400 leading-snug max-w-md mx-auto md:mx-0">
-                                            {activeCommunity ? activeCommunity.description || `Transmitting frequency: ${activeCommunity.tags.join(', ')}` : "Curated frequency from all spheres."}
-                                        </p>
+                                {/* Decorative Blur */}
+                                <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px]"></div>
+
+                                {/* Icon / Avatar */}
+                                <div className="relative group shrink-0">
+                                    <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] overflow-hidden shadow-2xl bg-[#1a1a1a] flex items-center justify-center border border-white/5">
+                                        {activeCommunity.icon ? (
+                                            <img src={activeCommunity.icon} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-4xl md:text-6xl font-black text-indigo-500/50">
+                                                {activeCommunity.name.charAt(0)}
+                                            </span>
+                                        )}
                                     </div>
+                                </div>
 
-                                    {/* Action Buttons */}
-                                    {activeCommunity && (
+                                {/* Info & Actions */}
+                                <div className="flex-1 z-10 w-full text-center md:text-left pt-2">
+                                    <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-4 gap-4">
+                                        <div>
+                                            <div className="flex items-center justify-center md:justify-start space-x-3 mb-1">
+                                                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight font-['Inter']">
+                                                    {activeCommunity.name}
+                                                </h1>
+                                                <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-black uppercase tracking-wider">BAND</span>
+                                            </div>
+                                            <p className="text-lg font-medium text-slate-400 leading-snug max-w-md mx-auto md:mx-0">
+                                                {activeCommunity.description || `Transmitting frequency: ${activeCommunity.tags.join(', ')}`}
+                                            </p>
+                                        </div>
+
+                                        {/* Action Buttons */}
                                         <div className="flex space-x-3">
                                             <button
                                                 onClick={handleJoinToggle}
@@ -573,39 +589,27 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                                                 <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
                                             </button>
                                         </div>
-                                    )}
-                                </div>
-
-                                {/* Stats Row */}
-                                <div className="flex items-center justify-center md:justify-start space-x-8 md:space-x-12 border-t border-white/5 pt-4">
-                                    <div className="text-center md:text-left group cursor-pointer">
-                                        <div className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider group-hover:text-white transition-colors">Members</div>
-                                        <div className="text-xl md:text-2xl font-black font-['Inter'] text-white">
-                                            {activeCommunity ? memberCount : "All"}
-                                        </div>
-                                    </div>
-                                    <div className="text-center md:text-left">
-                                        <div className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider">Online</div>
-                                        <div className="text-xl md:text-2xl font-black font-['Inter'] text-green-500 flex items-center justify-center md:justify-start gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                            {activeCommunity ? "42" : "-"}
-                                        </div>
                                     </div>
 
-                                    {/* Customize Feed Button (Only when no community) */}
-                                    {!activeCommunity && (
-                                        <button
-                                            onClick={() => setShowTopicSelector(true)}
-                                            className="ml-auto p-2 rounded-full hover:bg-white/10 text-slate-500 hover:text-white transition-colors flex items-center gap-2"
-                                            title="Customize Interests"
-                                        >
-                                            <span className="text-xs font-bold uppercase tracking-wider">Customize</span>
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                                        </button>
-                                    )}
+                                    {/* Stats Row */}
+                                    <div className="flex items-center justify-center md:justify-start space-x-12 border-t border-white/5 pt-6 mt-2">
+                                        <div className="text-center md:text-left group cursor-pointer">
+                                            <div className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider group-hover:text-white transition-colors">Members</div>
+                                            <div className="text-2xl font-black font-['Inter'] text-white">
+                                                {memberCount}
+                                            </div>
+                                        </div>
+                                        <div className="text-center md:text-left">
+                                            <div className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider">Online</div>
+                                            <div className="text-2xl font-black font-['Inter'] text-green-500 flex items-center justify-center md:justify-start gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                                {Math.floor(memberCount * 0.1) + 2}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {loading ? (
