@@ -117,13 +117,13 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
         <>
             {/* Backdrop (Mobile & Desktop Overlay Mode) */}
             <div
-                className={`fixed inset - 0 bg - black / 80 backdrop - blur - sm z - 40 transition - opacity duration - 300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} `}
+                className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-[55] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={onClose}
             />
 
             {/* Sidebar Panel - Fixed Left */}
             <div
-                className={`fixed top - 0 left - 0 bottom - 0 w - 80 bg - [#050508] / 95 backdrop - blur - xl border - r border - [var(--glass - border)]z - 50 transform transition - transform duration - 300 ease - out ${isOpen ? 'translate-x-0' : '-translate-x-full'} shadow - 2xl h - screen pt - 20 pb - 10 px - 4 overflow - y - auto custom - scrollbar flex flex - col`}
+                className={`fixed top-0 left-0 bottom-0 w-80 bg-[#050508]/95 backdrop-blur-xl border-r border-[var(--glass-border)] z-[60] transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} shadow-2xl h-screen pt-20 pb-10 px-4 overflow-y-auto custom-scrollbar flex flex-col`}
             >
                 <div className="mb-4 flex items-center justify-between px-2">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Frequencies</h2>

@@ -124,6 +124,20 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         )}
                     </div>
 
+                    {/* Post Image */}
+                    {post.imageURL && (
+                        <div className="mb-4 rounded-xl overflow-hidden shadow-lg border border-white/5">
+                            <img
+                                src={post.imageURL}
+                                alt="Transmission visual"
+                                className="w-full h-auto object-cover max-h-[500px]"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                        </div>
+                    )}
+
                     <div className="mb-4">
                         <RichTextRenderer content={post.content} />
                     </div>
@@ -484,6 +498,17 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                                 <GlobeIcon className="w-6 h-6 text-indigo-400" />
                             </div>
 
+                            {/* Customize Feed Button */}
+                            {!activeCommunity && (
+                                <button
+                                    onClick={() => setShowTopicSelector(true)}
+                                    className="p-2 rounded-full hover:bg-white/10 text-slate-500 hover:text-white transition-colors"
+                                    title="Customize Interests"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                </button>
+                            )}
+
                             <div className="flex flex-col text-center md:text-left">
                                 <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter italic">
                                     {activeCommunity
@@ -538,7 +563,6 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     )}
                 </div>
             )}
-
         </div>
     );
 };
