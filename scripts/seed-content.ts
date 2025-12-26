@@ -273,8 +273,14 @@ async function processTopic(conn: any, topic: { id: string, subreddits: string[]
                 imageUrl = `https://wsrv.nl/?url=${encodedUrl}&w=800&q=80&output=webp`;
             }
 
-            // ID Generation (Deterministic)
-            const uniqueString = `reddit-${post.permalink}`;
+            // ID Generation (Deterministic based on CONTENT + DOMAIN)
+            // Previously we used permalink, but that allows cross-posts to duplicate.
+            // valid unique string: domain + (imageURL OR contentHash)
+            const contentSig = imageUrl
+                ? `img-${imageUrl}`
+                : `txt-${createHash('md5').update(finalContent).digest('hex')}`;
+
+            const uniqueString = `${domainId}-${contentSig}`;
             const hash = createHash('sha1').update(uniqueString).digest('hex');
             const postId = `${hash.substring(0, 8)}-${hash.substring(8, 12)}-${hash.substring(12, 16)}-${hash.substring(16, 20)}-${hash.substring(20, 32)}`;
 
