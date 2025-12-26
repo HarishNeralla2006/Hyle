@@ -9,6 +9,8 @@ on:
 jobs:
   seed:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
     steps:
     - uses: actions/checkout@v3
@@ -22,6 +24,4 @@ jobs:
       run: npm ci
 
     - name: Run Seeder
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: npx ts-node scripts/seed-content.ts
