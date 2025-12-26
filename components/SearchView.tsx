@@ -3,6 +3,7 @@ import { Domain, ViewState, ViewType } from '../types';
 import { SearchIcon, CloseIcon } from './icons';
 import { execute } from '../lib/tidbClient';
 import { ROOT_DOMAINS } from '../services/pollinationsService';
+import { normalizeSubTopic } from '../lib/normalization';
 
 interface SearchViewProps {
     domainTree: Domain | null;
@@ -170,9 +171,13 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
 
         // 5. Filter by Search
         const lower = searchTerm.toLowerCase();
+        // SMART REDIRECT: partial match against the canonical name if fuzzy match succeeds
+        const normalized = normalizeSubTopic(searchTerm).toLowerCase();
+
         const filtered = mergedResults.filter(d =>
             d.name.toLowerCase().includes(lower) ||
-            d.id.toLowerCase().includes(lower)
+            d.id.toLowerCase().includes(lower) ||
+            (normalized !== lower && d.name.toLowerCase().includes(normalized))
         );
 
         // 6. Sort: High signal count first, then trending, then alphabetical
