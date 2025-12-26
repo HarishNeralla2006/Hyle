@@ -6,11 +6,12 @@ on:
     - cron: '0 */6 * * *' # Startup time: At minute 0 of every 6th hour (12:00, 6:00, etc.)
   workflow_dispatch: # Allow manual trigger
 
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
 jobs:
   seed:
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: "${{ secrets.DATABASE_URL }}"
     
     steps:
     - uses: actions/checkout@v3
