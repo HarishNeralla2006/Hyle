@@ -633,7 +633,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                         </div>
                     ) : (
                         posts.map(post => (
-                            <div key={post.id} className="snap-center">
+                            <div key={post.id} className="snap-start mb-6">
                                 <PostCard
                                     post={post}
                                     onToggleLike={() => handleToggleLike(post)}
