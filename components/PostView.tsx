@@ -6,6 +6,7 @@ import { PostWithAuthorAndLikes, ViewState, ViewType, Comment } from '../types';
 import { useStatus } from '../contexts/StatusContext';
 import { HeartIcon, TrashIcon, BackIcon, CommentIcon, ReplyIcon, EditIcon } from './icons';
 import { RichTextRenderer } from './RichTextRenderer';
+import { normalizeSubTopic } from '../lib/normalization';
 
 
 interface PostViewProps {
@@ -239,15 +240,29 @@ const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentVie
             const normalize = (s: string) => s.toLowerCase().trim();
             const target = normalize(domainId);
 
-            // ALIASING ALGORITHM V2: Generic
+            // ALIASING ALGORITHM V3: Smart Topic Normalization (Vector/Fuzzy Logic)
             const idSet = new Set<string>([target]);
 
+            // 1. Get Canonical Topic (e.g. "Independent Games" -> "Indie Games")
+            const canonical = normalizeSubTopic(target);
+            if (canonical && normalize(canonical) !== target) {
+                idSet.add(normalize(canonical));
+            }
+
+            // 2. Add Plurals/Singulars for good measure
             if (target === 'tech') idSet.add('technology');
             if (target === 'technology') idSet.add('tech');
             if (target === 'math') idSet.add('mathematics');
 
             if (target.endsWith('s')) idSet.add(target.slice(0, -1));
             else idSet.add(target + 's');
+
+            // Also sanitize the canonical one for plurals
+            if (canonical) {
+                const canonNorm = normalize(canonical);
+                if (canonNorm.endsWith('s')) idSet.add(canonNorm.slice(0, -1));
+                else idSet.add(canonNorm + 's');
+            }
 
             const potentialIds = Array.from(idSet);
 
