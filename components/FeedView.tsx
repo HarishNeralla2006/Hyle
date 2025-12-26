@@ -527,7 +527,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                         {/* Conditional Header Rendering */}
                         {!activeCommunity ? (
                             // GLOBAL FEED (Simple Restoration)
-                            <div className="w-full flex items-center justify-between py-6 px-2 md:px-0">
+                            <div className="w-full flex items-center justify-between py-6 px-2 md:px-0 snap-start">
                                 <div>
                                     <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Signal</h1>
                                     <p className="text-slate-500 font-medium text-sm">Your universal feed.</p>
@@ -542,7 +542,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                             </div>
                         ) : (
                             // COMMUNITY VIEW (Profile Style)
-                            <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4">
+                            <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4 snap-start">
 
                                 {/* Decorative Blur */}
                                 <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px]"></div>
@@ -633,7 +633,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                         </div>
                     ) : (
                         posts.map(post => (
-                            <div key={post.id} className="snap-center mb-6">
+                            <div key={post.id} className="snap-start mb-6 scroll-mt-24">
                                 <PostCard
                                     post={post}
                                     onToggleLike={() => handleToggleLike(post)}
