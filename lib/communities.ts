@@ -19,7 +19,16 @@ export const fetchCommunities = async (): Promise<Community[]> => {
         // Parse tags if they are stringified
         return comms.map((c: any) => ({
             ...c,
-            tags: typeof c.tags === 'string' ? JSON.parse(c.tags) : c.tags
+            ...c,
+            tags: typeof c.tags === 'string' ? (() => {
+                try {
+                    const parsed = JSON.parse(c.tags);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    // Fallback for legacy comma-separated tags
+                    return c.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+                }
+            })() : c.tags
         }));
     } catch (error) {
         console.error("Error fetching communities:", error);
@@ -71,7 +80,7 @@ export const createCommunity = async (name: string, description: string, tags: s
     try {
         // Simple ID generation: name-slug
         const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const tagString = tags.join(',');
+        const tagString = JSON.stringify(tags);
         const themeColor = '#FFD820'; // Default Hyle Yellow
 
         await execute(
