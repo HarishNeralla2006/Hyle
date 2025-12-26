@@ -90,15 +90,18 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                 setSignalLoading(true);
                 try {
                     // This query needs to be supported by tidbClient mock/real
+                    // SMART REDIRECT: Also search for the canonical term (e.g. "Indie Games")
+                    const normalized = normalizeSubTopic(searchTerm);
+
                     const sql = `
                         SELECT p.id, p.content, p.created_at, p.user_id, p.domain_id, u.username, u.photoURL 
                         FROM posts p
                         LEFT JOIN profiles u ON p.user_id = u.id
-                        WHERE LOWER(p.content) LIKE LOWER(?)
+                        WHERE LOWER(p.content) LIKE LOWER(?) OR LOWER(p.content) LIKE LOWER(?)
                         ORDER BY p.created_at DESC
                         LIMIT 20
                     `;
-                    const results = await execute(sql, [`%${searchTerm}%`]);
+                    const results = await execute(sql, [`%${searchTerm}%`, `%${normalized}%`]);
                     setSignalResults(results);
                 } catch (e) {
                     console.error("Signal search failed", e);
