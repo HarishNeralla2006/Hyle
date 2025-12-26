@@ -96,8 +96,8 @@ async function main() {
     await ensureHumanProfiles(conn);
 
     const isBulk = process.argv.includes('--bulk');
-    // For bulk, do more posts per domain. For normal run, just 1-2.
-    const postsPerDomain = isBulk ? 5 : 2;
+    // For bulk: 28 domains * 11 posts ~= 308 posts total. Perfect for "Bulk 300".
+    const postsPerDomain = isBulk ? 11 : 2;
 
     console.log(`🎯 Targeting ${TOPIC_REGISTRY.length} Valid Domains from TopicSelector...`);
 
