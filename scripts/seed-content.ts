@@ -261,7 +261,11 @@ async function processTopic(conn: any, topic: { id: string, subreddits: string[]
             const subTopicName = normalizeSubTopic(subreddit);
 
             let finalContent = cleanTitle;
-            if (post.selftext) finalContent += `\n\n${post.selftext.substring(0, 1000)}`; // Limit text length
+            if (post.selftext) {
+                // Remove preview.redd.it links (often artifacts of image posts)
+                const cleanText = post.selftext.replace(/https:\/\/preview\.redd\.it\/[^\s\)]+/g, '').trim();
+                finalContent += `\n\n${cleanText.substring(0, 1000)}`;
+            }
 
             // Append the Intelligent Tag so it's searchable
             finalContent += `\n\n#${subTopicName.replace(/\s/g, '')} #${domainId}`;
