@@ -6,13 +6,8 @@ import { useStatus } from '../contexts/StatusContext';
 import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons';
 import PostView from './PostView';
 import { RichTextRenderer } from './RichTextRenderer';
-// For now, I will duplicate PostCard to be safe and independent, or better yet, refactor PostCard to be exported from PostView.tsx 
-// But viewing PostView.tsx shows PostCard is not exported. I should probably duplicate it for this specific task to avoid touching PostView logic too much and breaking things, 
-// OR I can export it. Let's export it from PostView.tsx in a separate step or just copy it here. 
-// Given the instructions, I'll copy the core logic or simplified version here for the Feed.
-// Actually, I'll basically copy the PostCard logic.
-
-// ... deciding to copy PostCard logic for stability ...
+import CommunitySidebar from './CommunitySidebar';
+import { COMMUNITIES } from '../lib/communities';
 
 // Helper to organize comments into threads
 const organizeComments = (comments: Comment[]) => {
@@ -218,6 +213,10 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
     const [loadError, setLoadError] = useState(false);
     const [showTopicSelector, setShowTopicSelector] = useState(false);
 
+    // Community Feed State
+    const [activeCommunityId, setActiveCommunityId] = useState<string | null>(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     // Pull to refresh state
     const [pullStartPoint, setPullStartPoint] = useState<number>(0);
     const [pullChange, setPullChange] = useState<number>(0);
@@ -229,8 +228,8 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
     const fetchFeed = useCallback(async () => {
         if (!user) return;
 
-        // Check for interests
-        if (!profile?.interests) {
+        // Check for interests IF NOT looking at a community
+        if (!activeCommunityId && !profile?.interests) {
             setShowTopicSelector(true);
             setIsLoading(false);
             return;
@@ -239,19 +238,36 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
         setShowTopicSelector(false);
         setIsLoading(true);
         try {
-            const interests = profile.interests.split(',').filter(Boolean);
-            if (interests.length === 0) {
-                setShowTopicSelector(true);
+            let likeClauses = '';
+            let queryParams: string[] = [];
+
+            if (activeCommunityId) {
+                // Community Logic: Filter by Tags
+                const comm = COMMUNITIES.find(c => c.id === activeCommunityId);
+                if (comm) {
+                    // Search for tags in domain_id OR content hashtags
+                    // Simplified: just match domain_id for now as "tags" in community often map to Topic IDs
+                    likeClauses = comm.tags.map(() => `(LOWER(p.domain_id) LIKE ? OR LOWER(p.content) LIKE ?)`).join(' OR ');
+                    // Flatten params: [tag1, tag1, tag2, tag2...]
+                    queryParams = comm.tags.flatMap(t => [`%${t.toLowerCase()}%`, `%#${t.toLowerCase()}%`]);
+                }
+            } else {
+                // Default Logic: User Interests
+                const interests = profile?.interests?.split(',').filter(Boolean) || [];
+                if (interests.length === 0) {
+                    setShowTopicSelector(true);
+                    setIsLoading(false);
+                    return;
+                }
+                likeClauses = interests.map(() => `LOWER(p.domain_id) LIKE ?`).join(' OR ');
+                queryParams = interests.map(i => `%${i.toLowerCase()}%`);
+            }
+
+            if (!likeClauses) {
+                setPosts([]);
                 setIsLoading(false);
                 return;
             }
-
-            // ... (rest of fetch logic)
-
-            // Construct LIKE clauses for each interest
-            // WHERE (LOWER(p.domain_id) LIKE '%topic1%' OR LOWER(p.domain_id) LIKE '%topic2%')
-            const likeClauses = interests.map(() => `LOWER(p.domain_id) LIKE ?`).join(' OR ');
-            const queryParams = interests.map(i => `%${i.toLowerCase()}%`);
 
             const sql = `
                 SELECT 
@@ -317,7 +333,7 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [user, profile, setError]);
+    }, [user, profile, setError, activeCommunityId]);
 
     useEffect(() => {
         fetchFeed();
@@ -395,115 +411,161 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
 
 
     return (
-        <div className="w-full h-full flex flex-col items-center relative bg-transparent overflow-hidden">
-            {showTopicSelector ? (
-                <div className="w-full h-full overflow-y-auto custom-scrollbar">
-                    {/* Pass extra padding via props or handle in wrapper if needed, 
-                    {/* Pass extra padding via props or handle in wrapper if needed,
-                         but TopicSelector has its own padding.
-                         We just need to ensure the container doesn't clip. */}
-                    <div className="min-h-full flex items-center justify-center py-20">
-                        <TopicSelector onComplete={() => { setShowTopicSelector(false); fetchFeed(); }} />
+        // Flex row to accommodate Desktop Sidebar
+        <div className="w-full h-full flex items-start relative bg-transparent overflow-hidden">
+
+            {/* Desktop Sidebar (Permanent) */}
+            <div className="hidden md:block h-full flex-shrink-0">
+                <CommunitySidebar
+                    activeId={activeCommunityId}
+                    onSelect={setActiveCommunityId}
+                    isOpen={true} // Always open on desktop
+                    onClose={() => { }}
+                />
+            </div>
+
+            {/* Main Feed Column */}
+            <div className="flex-1 h-full flex flex-col items-center relative overflow-hidden">
+
+                {/* Mobile Sidebar (Absolute) */}
+                <CommunitySidebar
+                    activeId={activeCommunityId}
+                    onSelect={setActiveCommunityId}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                />
+
+                {showTopicSelector ? (
+                    <div className="w-full h-full overflow-y-auto custom-scrollbar">
+                        <div className="min-h-full flex items-center justify-center py-20">
+                            <TopicSelector onComplete={() => { setShowTopicSelector(false); fetchFeed(); }} />
+                        </div>
                     </div>
-                </div>
-            ) : (
-                <div
-                    ref={scrollContainerRef}
-                    onTouchStart={onTouchStart}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}
-                    className="w-full h-full max-w-4xl px-3 md:px-4 pt-20 md:pt-24 pb-20 md:pb-32 overflow-y-auto custom-scrollbar snap-y snap-mandatory md:snap-none"
-                >
-                    {/* Pull to Refresh Indicator */}
+                ) : (
                     <div
-                        style={{ height: `${pullChange}px`, opacity: Math.min(pullChange / 70, 1) }}
-                        className="w-full flex items-center justify-center overflow-hidden transition-all duration-200 ease-out -mt-4 md:mt-0"
+                        ref={scrollContainerRef}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                        className="w-full h-full max-w-4xl px-3 md:px-4 pt-20 md:pt-24 pb-20 md:pb-32 overflow-y-auto custom-scrollbar snap-y snap-mandatory md:snap-none relative"
                     >
-                        {isRefreshing ? (
-                            <div className="flex flex-col items-center py-2">
-                                <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                        {/* Pull to Refresh Indicator */}
+                        <div
+                            style={{ height: `${pullChange}px`, opacity: Math.min(pullChange / 70, 1) }}
+                            className="w-full flex items-center justify-center overflow-hidden transition-all duration-200 ease-out -mt-4 md:mt-0"
+                        >
+                            {isRefreshing ? (
+                                <div className="flex flex-col items-center py-2">
+                                    <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                                </div>
+                            ) : (
+                                <div className={`transform transition-transform duration-300 ${pullChange > 70 ? 'rotate-180' : ''}`}>
+                                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ... content ... */}
+                        <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start">
+
+                            {/* Header Container */}
+                            <div className="flex items-center justify-center space-x-3 mb-1 md:mb-0 relative w-full md:w-auto">
+
+                                {/* Mobile Open Sidebar Button */}
+                                <button
+                                    onClick={() => setIsSidebarOpen(true)}
+                                    className="md:hidden absolute left-0 p-2 text-indigo-400 hover:text-white"
+                                >
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                                </button>
+
+                                {/* Icon */}
+                                <div className="hidden md:block p-3 bg-white/5 rounded-full border border-white/10 animate-pulse-slow">
+                                    <GlobeIcon className="w-6 h-6 text-indigo-400" />
+                                </div>
+
+                                <div className="flex flex-col text-center md:text-left">
+                                    <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter italic">
+                                        {activeCommunityId
+                                            ? COMMUNITIES.find(c => c.id === activeCommunityId)?.name
+                                            : "Your Feed"
+                                        }
+                                    </h1>
+                                    <p className="text-slate-500 text-xs md:text-sm hidden md:block">
+                                        {activeCommunityId
+                                            ? `Transmitting on frequencies: ${COMMUNITIES.find(c => c.id === activeCommunityId)?.tags.join(', ')}`
+                                            : "Curated transmissions from your selected spheres."
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+
+                            {!activeCommunityId && (
+                                <button onClick={() => setShowTopicSelector(true)} className="mt-1 md:mt-2 text-[10px] md:text-xs text-indigo-400 hover:text-white transition-colors uppercase tracking-widest font-bold">Adjust Spheres</button>
+                            )}
+                        </div>
+
+                        {isLoading ? (
+                            <div className="flex justify-center pt-20">
+                                <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                            </div>
+                        ) : loadError ? (
+                            <div className="text-center py-20 opacity-70 flex flex-col items-center snap-start h-[80vh] justify-center">
+                                <p className="text-red-400 mb-2 font-bold">Signal Interrupted</p>
+                                <button
+                                    onClick={() => { setLoadError(false); fetchFeed(); }}
+                                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                                >
+                                    Retry Connection
+                                </button>
+                            </div>
+                        ) : posts.length === 0 ? (
+                            <div className="text-center py-20 opacity-50 flex flex-col items-center snap-start h-[80vh] justify-center">
+                                <p>No transmissions found on this frequency.</p>
+                                <p className="text-xs mt-2 text-slate-400">Try switching communities or expanding interests.</p>
+                                {activeCommunityId ? (
+                                    <button
+                                        onClick={() => setActiveCommunityId(null)}
+                                        className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                                    >
+                                        Return to Global Feed
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowTopicSelector(true)}
+                                        className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                                    >
+                                        Select Interests
+                                    </button>
+                                )}
                             </div>
                         ) : (
-                            <div className={`transform transition-transform duration-300 ${pullChange > 70 ? 'rotate-180' : ''}`}>
-                                <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                </svg>
+                            posts.map((post) => (
+                                <div key={post.id} className="snap-start flex items-center justify-center w-full min-h-[85vh] md:min-h-0 md:h-auto py-4 md:py-0">
+                                    <PostCard
+                                        post={post}
+                                        onToggleLike={() => handleToggleLike(post)}
+                                        onDelete={() => handleDeletePost(post.id)}
+                                        onComment={(content, parentId) => handleCreateComment(post.id, content, parentId)}
+                                        onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
+                                        currentUserId={user?.uid}
+                                        onUserClick={(uid) => setCurrentView((prev) => ({ ...prev, overlayProfileId: uid }))}
+                                    />
+                                </div>
+                            ))
+                        )}
+                        {/* Snap-aligned Loading Trigger (Visual Only for now as pagination is implicit limit 50) */}
+                        {posts.length > 0 && (
+                            <div className="snap-start w-full min-h-[20vh] flex flex-col items-center justify-center py-10 opacity-50">
+                                <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
+                                <p className="text-[10px] uppercase tracking-widest text-slate-500">Synchronizing...</p>
                             </div>
                         )}
                     </div>
-
-                    {/* ... content ... */}
-                    <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start">
-                        {/* Desktop Icon (Large) */}
-                        <div className="hidden md:block p-4 bg-white/5 rounded-full mb-4 border border-white/10 animate-pulse-slow">
-                            <GlobeIcon className="w-8 h-8 text-indigo-400" />
-                        </div>
-
-                        {/* Header Container */}
-                        <div className="flex items-center justify-center space-x-3 mb-1 md:mb-0">
-                            {/* Mobile Icon (Small & Inline) */}
-                            <div className="md:hidden p-2 bg-white/5 rounded-full border border-white/10 animate-pulse-slow">
-                                <GlobeIcon className="w-5 h-5 text-indigo-400" />
-                            </div>
-
-                            <div className="flex flex-col text-center md:block">
-                                <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter italic">Your Feed</h1>
-                                <p className="text-slate-500 text-xs md:text-sm hidden md:block">Curated transmissions from your selected spheres.</p>
-                            </div>
-                        </div>
-
-                        <button onClick={() => setShowTopicSelector(true)} className="mt-1 md:mt-2 text-[10px] md:text-xs text-indigo-400 hover:text-white transition-colors uppercase tracking-widest font-bold">Adjust Spheres</button>
-                    </div>
-
-                    {isLoading ? (
-                        <div className="flex justify-center pt-20">
-                            <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                        </div>
-                    ) : loadError ? (
-                        <div className="text-center py-20 opacity-70 flex flex-col items-center snap-start h-[80vh] justify-center">
-                            <p className="text-red-400 mb-2 font-bold">Signal Interrupted</p>
-                            <button
-                                onClick={() => { setLoadError(false); fetchFeed(); }}
-                                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-                            >
-                                Retry Connection
-                            </button>
-                        </div>
-                    ) : posts.length === 0 ? (
-                        <div className="text-center py-20 opacity-50 flex flex-col items-center snap-start h-[80vh] justify-center">
-                            <p>No transmissions found in your spheres.</p>
-                            <p className="text-xs mt-2 text-slate-400">Try expanding your interests.</p>
-                            <button
-                                onClick={() => setShowTopicSelector(true)}
-                                className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-                            >
-                                Select Interests
-                            </button>
-                        </div>
-                    ) : (
-                        posts.map((post) => (
-                            <div key={post.id} className="snap-start flex items-center justify-center w-full min-h-[85vh] md:min-h-0 md:h-auto py-4 md:py-0">
-                                <PostCard
-                                    post={post}
-                                    onToggleLike={() => handleToggleLike(post)}
-                                    onDelete={() => handleDeletePost(post.id)}
-                                    onComment={(content, parentId) => handleCreateComment(post.id, content, parentId)}
-                                    onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
-                                    currentUserId={user?.uid}
-                                    onUserClick={(uid) => setCurrentView((prev) => ({ ...prev, overlayProfileId: uid }))}
-                                />
-                            </div>
-                        ))
-                    )}
-                    {/* Snap-aligned Loading Trigger (Visual Only for now as pagination is implicit limit 50) */}
-                    {posts.length > 0 && (
-                        <div className="snap-start w-full min-h-[20vh] flex flex-col items-center justify-center py-10 opacity-50">
-                            <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
-                            <p className="text-[10px] uppercase tracking-widest text-slate-500">Synchronizing...</p>
-                        </div>
-                    )}
-                </div>
-            )}
+                )}
+            </div>
         </div >
     );
 };
