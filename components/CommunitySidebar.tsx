@@ -84,7 +84,7 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
     // If showing creation modal
     if (isCreating) {
         return (
-            <div className={`fixed inset - 0 bg - black / 80 backdrop - blur - xl z - 50 flex items - center justify - center p - 4`}>
+            <div className={`fixed inset-0 bg-black/80 backdrop-blur-xl z-[80] flex items-center justify-center p-4`}>
                 <div className="bg-[#050508] border border-[var(--glass-border)] rounded-2xl p-6 w-full max-w-md shadow-2xl animate-pop-in">
                     <h2 className="text-xl font-black text-white italic mb-1">Create Frequency</h2>
                     <p className="text-slate-500 text-xs mb-6">Define a new signal source for the network.</p>
