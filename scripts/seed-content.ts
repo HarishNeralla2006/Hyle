@@ -79,6 +79,81 @@ const HUMAN_USERS = [
 ];
 
 // -----------------------------------------------------------------------------
+// SMART NORMALIZATION UTILS (The "Brilliant" Solution)
+// -----------------------------------------------------------------------------
+
+// 1. Synonym Map: Hardcoded knowledge of identical concepts
+const SYNONYM_MAP: Record<string, string> = {
+    'independent games': 'Indie Games',
+    'indie gaming': 'Indie Games',
+    'indiegaming': 'Indie Games',
+    'pcgaming': 'PC Gaming',
+    'computer games': 'PC Gaming',
+    'machine learning': 'AI',
+    'artificial intelligence': 'AI',
+    'deep learning': 'AI',
+    'web development': 'Web Dev',
+    'webdev': 'Web Dev',
+    'cinema': 'Movies',
+    'cinematography': 'Movies',
+    'film': 'Movies',
+    'biology': 'Biology',
+    'microbiology': 'Biology',
+    'quantum physics': 'Quantum Physics',
+    'quantummechanics': 'Quantum Physics'
+};
+
+// 2. Levenshtein Distance (Fuzzy Matcher) - No external dependencies
+function levenshteinDistance(a: string, b: string): number {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substitution
+                    Math.min(
+                        matrix[i][j - 1] + 1, // insertion
+                        matrix[i - 1][j] + 1  // deletion
+                    )
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+// 3. The Logic: Normalize Input -> Canonical Sub-Sphere
+function normalizeSubTopic(input: string): string {
+    const weirdInput = input.toLowerCase().replace(/r\//, '').replace(/_/g, ' ').trim();
+
+    // Direct Synonym Check
+    if (SYNONYM_MAP[weirdInput]) {
+        return SYNONYM_MAP[weirdInput];
+    }
+
+    // Fuzzy Check against known keys
+    // If "Indie-Gamez" comes in, and we have "Indie Games", match it!
+    const knownKeys = Object.keys(SYNONYM_MAP);
+    for (const key of knownKeys) {
+        // If similarity is > 80% (distance is small)
+        const dist = levenshteinDistance(weirdInput, key);
+        const maxLen = Math.max(weirdInput.length, key.length);
+        if (1 - (dist / maxLen) > 0.8) {
+            return SYNONYM_MAP[key];
+        }
+    }
+
+    // Fallback: Capitalize Words
+    return weirdInput.replace(/\b\w/g, l => l.toUpperCase());
+}
+
+
+// -----------------------------------------------------------------------------
 // MAIN LOGIC
 // -----------------------------------------------------------------------------
 
@@ -182,8 +257,14 @@ async function processTopic(conn: any, topic: { id: string, subreddits: string[]
             // Clean title
             let cleanTitle = post.title.replace(/\[.*?\]/g, '').trim();
 
+            // SMART NORMALIZATION: Identify the canonical sub-topic
+            const subTopicName = normalizeSubTopic(subreddit);
+
             let finalContent = cleanTitle;
             if (post.selftext) finalContent += `\n\n${post.selftext.substring(0, 1000)}`; // Limit text length
+
+            // Append the Intelligent Tag so it's searchable
+            finalContent += `\n\n#${subTopicName.replace(/\s/g, '')} #${domainId}`;
 
             // Image Proxy
             let imageUrl = null;
