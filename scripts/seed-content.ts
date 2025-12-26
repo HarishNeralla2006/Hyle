@@ -1,4 +1,3 @@
-
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -6,109 +5,44 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { connect } from '@tidbcloud/serverless';
-import { randomUUID, createHash } from 'crypto';
+import { createHash } from 'crypto';
 
 // -----------------------------------------------------------------------------
 // CONFIGURATION
 // -----------------------------------------------------------------------------
 
-// Map Spark Domains to Subreddits
-// NOTE: Keys MUST match the ID in TopicSelector.tsx (Singular mostly)
-// Map Spark Domains to Subreddits (Mirror Strategy)
-const DOMAIN_MAP: Record<string, string[]> = {
-    // --- TOP LEVEL SPHERES ---
-    'science': ['science', 'EverythingScience', 'biology', 'space', 'Physics'],
-    'physics': ['Physics', 'astrophysics', 'QuantumPhysics', 'Cosmology'],
-    'chemistry': ['chemistry', 'ChemicalEngineering', 'chemhelp'],
-    'business': ['business', 'startups', 'economics', 'finance', 'Entrepreneur'],
-    'technology': ['technology', 'gadgets', 'futurology', 'hardware', 'tech'],
-    'art': ['Art', 'DigitalArt', 'Museum', 'ConceptArt', 'Illustration', 'Oilpainting', 'StreetArt'],
-    'design': ['Design', 'web_design', 'graphic_design', 'UI_Design', 'userexperience'],
-    'music': ['Music', 'ListenToThis', 'WeAreTheMusicMakers', 'ElectronicMusic', 'Jazz'],
-    'history': ['history', 'AskHistorians', '100yearsago', 'HistoryPorn', 'ArtefactPorn'],
-    'philosophy': ['philosophy', 'Stoicism', 'Existentialism', 'PhilosophyofScience'],
-    'psychology': ['psychology', 'socialpsychology', 'Neuropsychology', 'CognitiveScience'],
-    'coding': ['programming', 'coding', 'webdev', 'javascript', 'Python', 'learnprogramming'],
-    'ai': ['artificial', 'MachineLearning', 'OpenAI', 'Singularity', 'ArtificialInteligence'],
-    'space': ['space', 'nasa', 'SpaceX', 'astronomy', 'Astrophotography'],
-    'nature': ['nature', 'EarthPorn', 'wildlife', 'botany', 'NatureIsFuckingLit'],
-    // Missing Top Levels (from SparkSphere)
-    'mathematics': ['math', 'mathematics', 'statistics', 'mathpics'],
-    'law': ['law', 'legaladvice', 'scotus', 'legal'],
-    'environment': ['environment', 'climatechange', 'sustainability', 'ecology'],
-    'literature': ['books', 'literature', 'ClassicBookClub', 'Poetry'],
-    'engineering': ['engineering', 'CivilEngineering', 'mechanicalengineering', 'Electronics'],
-    'education': ['education', 'Teachers', 'teaching', 'EdTech'],
-    'social sciences': ['sociology', 'anthropology', 'socialscience', 'Economics'],
-
-    // --- SUB-SPHERE MIRRORS (Drill-down content) ---
-    // [Science Sphere]
-    'Physics': ['Physics', 'QuantumPhysics', 'ParticlePhysics'],
-    'Astronomy': ['Astronomy', 'astrophotography', 'space'],
-    'Astrophysics': ['astrophysics', 'Cosmology'],
-    'Chemistry': ['chemistry', 'ChemicalEngineering', 'chemhelp'],
-    'Biology': ['biology', 'microbiology', 'genetics'],
-    'Neuroscience': ['Neuroscience', 'brain', 'CognitiveScience'],
-    'Quantum Mechanics': ['QuantumPhysics', 'QuantumMechanics'],
-    'Computer Science': ['computerscience', 'programming', 'softwareengineering'],
-    'Earth Science': ['earthscience', 'geology', 'climate'],
-    'Geophysics': ['geophysics', 'geology'],
-    'Molecular Biology': ['molecularbiology', 'biochemistry'],
-    'Organic Chemistry': ['OrganicChemistry', 'chemistry'],
-    'Environmental Science': ['environment', 'environmental_science'],
-    'Ecology': ['ecology', 'environment', 'conservation'],
-
-    // [Engineering Sphere]
-    'Mechanical Engineering': ['MechanicalEngineering', 'EngineeringPorn'],
-    'Civil Engineering': ['CivilEngineering', 'infrastructure'],
-    'Electrical Engineering': ['ElectricalEngineering', 'electronics', 'ECE'],
-    'Software Engineering': ['SoftwareEngineering', 'ProgrammerHumor', 'coding'],
-    'Aerospace Engineering': ['aerospace', 'SpaceX', 'aviation'],
-    'Chemical Engineering': ['ChemicalEngineering', 'processengineering'],
-    'Biomedical Engineering': ['Bioengineering', 'biotech'],
-    'Environmental Engineering': ['EnvironmentalEngineering', 'sustainability'],
-
-    // [Business Sphere]
-    'Marketing': ['marketing', 'advertising', 'socialmedia'],
-    'Finance': ['finance', 'FinancialPlanning', 'investing'],
-    'International Business': ['InternationalBusiness', 'globaltrade'],
-    'Human Resources': ['humanresources', 'askhr'],
-    'Operations Management': ['supplychain', 'logistics', 'operations'],
-    'Supply Chain Management': ['supplychain', 'logistics'],
-    'Entrepreneurship': ['Entrepreneur', 'startups', 'smallbusiness'],
-    'Business Analytics': ['businessintelligence', 'analytics', 'datascience'],
-
-    // [Technology Sphere]
-    'Artificial Intelligence': ['artificial', 'MachineLearning', 'OpenAI'],
-    'Data Science': ['datascience', 'dataisbeautiful', 'MachineLearning'],
-    'Cybersecurity': ['cybersecurity', 'netsec', 'hacking'],
-    'Cloud Computing': ['cloudcomputing', 'aws', 'azure'],
-    'Blockchain': ['Blockchain', 'CryptoCurrency', 'Ethereum'],
-    'Internet of Things': ['IoT', 'arduino', 'homeautomation'],
-    'Robotics': ['robotics', 'shittyrobots'],
-    'Augmented Reality': ['augmentedreality', 'virtualreality', 'AR_MR_XR'],
-    'Quantum Computing': ['QuantumComputing', 'QuantumPhysics'],
-
-    // [Mathematics Sphere]
-    'Algebra': ['algebra', 'math'],
-    'Calculus': ['calculus', 'math'],
-    'Geometry': ['geometry', 'mathpics'],
-    'Statistics': ['statistics', 'dataisbeautiful'],
-    'Probability': ['probability', 'statistics'],
-    'Number Theory': ['numbertheory', 'math'],
-    'Combinatorics': ['combinatorics', 'math'],
-    'Topology': ['topology', 'math'],
-    'Analysis': ['math', 'mathematics'],
-
-    // [Miscellaneous Mirrors]
-    'Digital Art': ['DigitalArt', 'ConceptArt'],
-    'Photography': ['photography', 'itookapicture'],
-    'Web Development': ['webdev', 'Frontend', 'reactjs'],
-    'Game Development': ['gamedev', 'Unity3D'],
-    'PC Gaming': ['pcgaming', 'Steam'],
-    'Indie Games': ['IndieGaming'],
-    'Virtual Reality': ['virtualreality', 'oculus'],
-};
+// STRICT DOMAIN REGISTRY (Mirrors TopicSelector.tsx)
+// This ensures that every bot post lands in a valid, clickable sphere in the UI.
+const TOPIC_REGISTRY = [
+    { id: 'science', subreddits: ['science', 'EverythingScience', 'biology', 'Physics', 'space'] },
+    { id: 'physics', subreddits: ['Physics', 'astrophysics', 'QuantumPhysics'] },
+    { id: 'chemistry', subreddits: ['chemistry', 'ChemicalEngineering'] },
+    { id: 'mathematics', subreddits: ['math', 'mathematics', 'statistics'] },
+    { id: 'biology', subreddits: ['biology', 'microbiology', 'genetics'] },
+    { id: 'technology', subreddits: ['technology', 'gadgets', 'futurology', 'hardware'] },
+    { id: 'engineering', subreddits: ['engineering', 'CivilEngineering', 'mechanicalengineering'] },
+    { id: 'business', subreddits: ['business', 'startups', 'economics', 'finance'] },
+    { id: 'law', subreddits: ['law', 'legaladvice'] },
+    { id: 'art', subreddits: ['Art', 'DigitalArt', 'Museum'] },
+    { id: 'design', subreddits: ['Design', 'web_design', 'graphic_design'] },
+    { id: 'music', subreddits: ['Music', 'ListenToThis', 'WeAreTheMusicMakers'] },
+    { id: 'literature', subreddits: ['books', 'literature', 'Poetry'] },
+    { id: 'history', subreddits: ['history', 'AskHistorians'] },
+    { id: 'philosophy', subreddits: ['philosophy', 'Stoicism'] },
+    { id: 'psychology', subreddits: ['psychology', 'socialpsychology'] },
+    { id: 'social sciences', subreddits: ['sociology', 'anthropology'] },
+    { id: 'education', subreddits: ['education', 'Teachers'] },
+    { id: 'coding', subreddits: ['programming', 'coding', 'webdev', 'javascript'] },
+    { id: 'ai', subreddits: ['artificial', 'MachineLearning', 'OpenAI'] },
+    { id: 'space', subreddits: ['space', 'nasa', 'SpaceX', 'astronomy'] },
+    { id: 'nature', subreddits: ['nature', 'EarthPorn', 'wildlife'] },
+    { id: 'environment', subreddits: ['environment', 'climatechange'] },
+    { id: 'gaming', subreddits: ['gaming', 'pcgaming', 'IndieGaming'] },
+    { id: 'cinema', subreddits: ['movies', 'cinema'] },
+    { id: 'food', subreddits: ['food', 'Cooking'] },
+    { id: 'travel', subreddits: ['travel', 'solotravel'] },
+    { id: 'health', subreddits: ['health', 'Fitness'] },
+];
 
 // "Real Person" User Pool
 const HUMAN_USERS = [
@@ -144,22 +78,12 @@ const HUMAN_USERS = [
     { id: 'user_adam', name: 'Adam_Rocket', desc: 'Aerospace engineer.' }
 ];
 
-// Thematic Bot Personas
-const PERSONAS = {
-    'NOVA': { id: 'bot_nova', name: 'Nova', desc: 'The Explorer' },
-    'PIXEL': { id: 'bot_pixel', name: 'Pixel', desc: 'The Technologist' },
-    'ATLAS': { id: 'bot_atlas', name: 'Atlas', desc: 'The Historian' },
-    'MUSE': { id: 'bot_muse', name: 'Muse', desc: 'The Artist' },
-    'GAIA': { id: 'bot_gaia', name: 'Gaia', desc: 'The Naturalist' },
-    'FLUX': { id: 'bot_flux', name: 'Flux', desc: 'The Curator' },
-};
-
 // -----------------------------------------------------------------------------
 // MAIN LOGIC
 // -----------------------------------------------------------------------------
 
 async function main() {
-    console.log("🌱 Starting Content Seeder (Refined - Normalized)...");
+    console.log("🌱 Starting Content Seeder (Strict Domain Alignment)...");
 
     if (!process.env.DATABASE_URL) {
         console.error("❌ Fatal: DATABASE_URL is missing. Make sure .env.local exists or vars are set.");
@@ -168,74 +92,32 @@ async function main() {
 
     const conn = connect({ url: process.env.DATABASE_URL });
 
-    // Step 0: Normalize Domains (Fix "arts" -> "art")
-    await normalizeDomains(conn);
-
-    if (process.argv.includes('--purge-bots')) {
-        await purgeBotPosts(conn);
-        return;
-    }
-
-    const isBulk = process.argv.includes('--bulk');
-    const postsPerDomain = isBulk ? 7 : 1;
-
-    // Pick domains
-    const allDomains = Object.keys(DOMAIN_MAP);
-
-    // PRIORITY SORT: Prioritize specific sub-domains (Capitalized) over generic ones (lowercase)
-    // This ensures "Quantum Mechanics" is processed before "science".
-    // "First Preference" rule implementation.
-    allDomains.sort((a, b) => {
-        const isASpecific = /^[A-Z]/.test(a); // Starts with Uppercase (e.g. Astrophysics)
-        const isBSpecific = /^[A-Z]/.test(b);
-        if (isASpecific && !isBSpecific) return -1; // A comes first
-        if (!isASpecific && isBSpecific) return 1;  // B comes first
-        return 0;
-    });
-
-    const selectedDomains = isBulk ? allDomains : allDomains.slice(0, 5); // Increased non-bulk limit slightly
-
-    console.log(`🎯 Targeted Domains: ${selectedDomains.length} domains (Targeting ~${selectedDomains.length * postsPerDomain} new posts)`);
-
-    // Ensure Human Profiles Exist
+    // Step 0: Ensure profiles exist
     await ensureHumanProfiles(conn);
 
-    // PARALLEL BATCH PROCESSING (3 at a time to be safe)
+    const isBulk = process.argv.includes('--bulk');
+    // For bulk, do more posts per domain. For normal run, just 1-2.
+    const postsPerDomain = isBulk ? 5 : 2;
+
+    console.log(`🎯 Targeting ${TOPIC_REGISTRY.length} Valid Domains from TopicSelector...`);
+
+    // Process domains in batches
     const BATCH_SIZE = 5;
-    for (let i = 0; i < selectedDomains.length; i += BATCH_SIZE) {
-        const batch = selectedDomains.slice(i, i + BATCH_SIZE);
-        console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(selectedDomains.length / BATCH_SIZE)}: [${batch.join(', ')}]`);
+    for (let i = 0; i < TOPIC_REGISTRY.length; i += BATCH_SIZE) {
+        const batch = TOPIC_REGISTRY.slice(i, i + BATCH_SIZE);
+        console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(TOPIC_REGISTRY.length / BATCH_SIZE)}: [${batch.map(t => t.id).join(', ')}]`);
 
-        await Promise.all(batch.map(domain => processDomain(conn, domain, postsPerDomain)));
+        await Promise.all(batch.map(topic => processTopic(conn, topic, postsPerDomain)));
 
-        // Small breather between batches
-        await new Promise(r => setTimeout(r, 2000));
+        // Small breather
+        await new Promise(r => setTimeout(r, 1500));
     }
 
     console.log("✅ Seeding completed.");
 }
 
-async function normalizeDomains(conn: any) {
-    console.log("🔄 Normalizing Domain IDs...");
-    try {
-        // Fix 'arts' -> 'art'
-        await conn.execute(`UPDATE posts SET domain_id = 'art' WHERE domain_id = 'arts'`);
-        await conn.execute(`UPDATE posts SET domain_id = 'art' WHERE domain_id = 'Art'`);
-        await conn.execute(`UPDATE posts SET domain_id = 'art' WHERE domain_id = 'Arts'`);
-
-        // Fix other common mis-matches if they exist
-        await conn.execute(`UPDATE posts SET domain_id = 'science' WHERE domain_id = 'Science'`);
-        await conn.execute(`UPDATE posts SET domain_id = 'technology' WHERE domain_id = 'tech'`);
-
-        console.log("   ✅ Domains normalized to singular canonical IDs.");
-    } catch (e: any) {
-        console.error("   ⚠️ Normalization warning (non-fatal):", e.message);
-    }
-}
-
 async function ensureHumanProfiles(conn: any) {
     console.log("   Checking Human Profiles...");
-
     for (const user of HUMAN_USERS) {
         try {
             await conn.execute(`
@@ -251,172 +133,84 @@ async function ensureHumanProfiles(conn: any) {
                 user.desc
             ]);
         } catch (e) {
-            // Likely already exists, ignore
+            // Ignore duplicates
         }
     }
 }
 
-async function purgeBotPosts(conn: any) {
-    console.log("🔥 PURGING ALL BOT POSTS...");
-    return;
-}
-
-async function processDomain(conn: any, domainId: string, limit: number) {
-    const subreddits = DOMAIN_MAP[domainId];
+async function processTopic(conn: any, topic: { id: string, subreddits: string[] }, limit: number) {
+    const { id: domainId, subreddits } = topic;
     let successCount = 0;
 
-    // 5. Select random sub-domain (Mirror Strategy) or fallback to top-level
-    // logic: 70% chance to drill down if sub-domains exist
-    let domain = domainId; // Default to 'science'
-    let chosenSub = '';
-
-    // Check if we have mapped sub-spheres for this top-level domain
-    // We need to find keys in DOMAIN_MAP that conceptually belong to this top-level
-    // The current map structure separates them. We need a heuristic.
-    // Heuristic: Check if the top-level key has a capitalized version in the sub-list? 
-    // Actually, the previous logic was just picking from the flat DOMAIN_MAP. 
-    // We need to know the Parent -> Child relationship to enforce the key.
-
-    // AUTO-DISCOVERY FIX: Ensure domainId contains the parent search term
-    // The user iterates keys of DOMAIN_MAP. 'domain' is e.g. 'physics'.
-    // We want to pick a specific sub-topic if possible.
-
-    // Let's create a reverse lookup or just a manual list for the massive mirror map?
-    // No, let's use the 'Priority First' logic but ensure the ID includes the parent.
-
-    // Actually, the loop at line 124 iterates ALL keys. 
-    // If we are processing 'Astrophysics' (Capitalized), we don't know it belongs to 'Physics'.
-    // BUT, the Feed Query relies on 'physics' (lowercase).
-    // 'Astrophysics' contains 'physics'. It works.
-    // 'Cosmology' does NOT. 
-
-    // We need a mapping of Orphan -> Parent.
-    const PARENT_MAP: Record<string, string> = {
-        'Cosmology': 'Space',
-        'Astronomy': 'Space',
-        'Neuroscience': 'Biology',
-        'Genetics': 'Biology',
-        'Topology': 'Mathematics',
-        'Algebra': 'Mathematics',
-        'Civil Engineering': 'Engineering', // 'Engineering' is inside strings
-        'Startup': 'Business',
-        'Stoicism': 'Philosophy',
-        'Logic': 'Philosophy',
-        'Cognitive': 'Psychology',
-        'Indie': 'Gaming',
-        'RPG': 'Gaming',
-        'Movies': 'Cinema',
-        'Wellness': 'Health',
-        'Fitness': 'Health',
-        'Botany': 'Nature',
-        'Wildlife': 'Nature',
-        'Climate': 'Environment',
-        // Add other orphans as needed
-    };
-
-    // If the current domain key is in our orphan map, prepend the parent!
-    // e.g. 'Cosmology' -> 'Space: Cosmology'
-    let finalDomainId = domain;
-
-    // Check if this domain is a sub-domain that needs parenting
-    // We need to look at the strings.
-
-    // SIMPLER FIX: 
-    // If this is a specific sub-domain (Capitalized) and it doesn't contain a likely parent keyword,
-    // we prepend a smart tag. 
-    // Actually, let's just use the PARENT_MAP for the known problem children.
-    if (PARENT_MAP[domain]) {
-        finalDomainId = `${PARENT_MAP[domain]}: ${domain}`;
-    }
-
-    // Also handle the Priority Queue logic from before
-    const isPriority = /^[A-Z]/.test(domain);
-
-    // Fetch posts
+    // Pick a random subreddit from the allowed list
     const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
-
-    // ROTATE SORT METHOD: Mix of 'hot', 'new', and 'top' for variety
-    const modes = ['hot', 'hot', 'new', 'top']; // Bias towards hot
+    const modes = ['hot', 'top', 'new'];
     const mode = modes[Math.floor(Math.random() * modes.length)];
-    const timeRange = mode === 'top' ? (Math.random() > 0.5 ? 'week' : 'month') : 'day'; // If top, look further back
+    const timeRange = mode === 'top' ? 'month' : 'day';
 
-    console.log(`   Processing ${finalDomainId} -> r/${subreddit} (${mode}/${timeRange})`);
+    console.log(`   Processing ${domainId} -> r/${subreddit} (${mode})`);
 
     try {
-        const fetchLimit = limit + 50; // Increased buffer
+        const fetchLimit = limit + 15;
         const response = await fetch(`https://www.reddit.com/r/${subreddit}/${mode}.json?t=${timeRange}&limit=${fetchLimit}`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
         });
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.log(`   ⚠️ Failed to fetch from r/${subreddit}`);
+            return;
+        }
 
         const data = await response.json();
         const posts = data.data.children;
 
         if (!posts || posts.length === 0) return;
 
-        let postsAdded = 0;
-
         for (const item of posts) {
-            if (postsAdded >= limit) break;
+            if (successCount >= limit) break;
             const post = item.data;
 
-            // -------------------------------------------------------------------------
-            // QUALITY FILTER
-            // -------------------------------------------------------------------------
+            // Filter for high quality
             const hasImage = post.url && (post.url.endsWith('.jpg') || post.url.endsWith('.png') || post.url.endsWith('.gif'));
-            let body = post.selftext || '';
-            const isShortText = body.length < 250;
-            const wantsImage = Math.random() < 0.70;
+            const isLongRef = post.selftext && post.selftext.length > 300;
 
-            if (wantsImage && !hasImage) {
-                if (body.length < 500) continue;
-            }
+            // We want either an image OR a decent text post
+            if (!hasImage && !isLongRef) continue;
 
-            if (!hasImage && isShortText) continue;
-
-            // -------------------------------------------------------------------------
-            // HUMAN ASSIGNMENT
-            // -------------------------------------------------------------------------
             const randomHuman = HUMAN_USERS[Math.floor(Math.random() * HUMAN_USERS.length)];
 
-            // FORMATTING
-            let cleanTitle = post.title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
-            cleanTitle = cleanTitle.replace(/\*\*/g, '').replace(/\*/g, '').replace(/__/g, '');
+            // Clean title
+            let cleanTitle = post.title.replace(/\[.*?\]/g, '').trim();
 
-            let finalContent = `${cleanTitle}`;
-            if (body) finalContent += `\n\n${body}`;
+            let finalContent = cleanTitle;
+            if (post.selftext) finalContent += `\n\n${post.selftext.substring(0, 1000)}`; // Limit text length
 
-            // IMAGE PROXY
+            // Image Proxy
             let imageUrl = null;
             if (hasImage) {
                 const encodedUrl = encodeURIComponent(post.url);
-                imageUrl = `https://wsrv.nl/?url=${encodedUrl}&w=600&q=60&output=webp`;
+                imageUrl = `https://wsrv.nl/?url=${encodedUrl}&w=800&q=80&output=webp`;
             }
 
-            // DEDUPLICATION: Generate Deterministic ID from Reddit Permalink
-            // This ensures that if we run the script 100 times, the same Reddit post
-            // always matches the SAME ID. The database will reject duplicates automatically.
+            // ID Generation (Deterministic)
             const uniqueString = `reddit-${post.permalink}`;
             const hash = createHash('sha1').update(uniqueString).digest('hex');
-            // Format as UUID-like string: 8-4-4-4-12
             const postId = `${hash.substring(0, 8)}-${hash.substring(8, 12)}-${hash.substring(12, 16)}-${hash.substring(16, 20)}-${hash.substring(20, 32)}`;
 
             try {
                 await conn.execute(`
                     INSERT INTO posts (id, user_id, domain_id, content, imageURL, created_at)
                     VALUES (?, ?, ?, ?, ?, NOW())
-                `, [postId, randomHuman.id, finalDomainId, finalContent, imageUrl]);
+                `, [postId, randomHuman.id, domainId, finalContent, imageUrl]);
 
-                console.log(`   -> SQL: Inserted post ${postId} for ${finalDomainId}`);
+                // console.log(`   -> Inserted: ${postId}`);
                 successCount++;
             } catch (err: any) {
-                // Silently skip duplicates (this is expected behavior now)
-                if (!err.message.includes('Duplicate entry')) {
-                    // Only log real errors
-                    // console.error(err); 
-                }
+                // Ignore duplicates
             }
+        }
+        if (successCount > 0) {
+            // console.log(`   ✅ Seeded ${successCount} posts for ${domainId}`);
         }
     } catch (e: any) {
         console.error(`   ❌ Error processing ${domainId}:`, e.message);
