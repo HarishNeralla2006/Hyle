@@ -7,7 +7,9 @@ import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons'
 import PostView from './PostView';
 import { RichTextRenderer } from './RichTextRenderer';
 import CommunitySidebar from './CommunitySidebar';
-import { COMMUNITIES } from '../lib/communities';
+import { Community } from '../lib/communities';
+import TopicSelector from './TopicSelector';
+import { normalizeSubTopic } from '../lib/normalization';
 
 // Helper to organize comments into threads
 const organizeComments = (comments: Comment[]) => {
@@ -99,254 +101,259 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                 <div className="p-4 md:p-6">
                     <div className="flex justify-between items-start mb-3 md:mb-4">
                         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onUserClick(post.user_id)}>
-                            <div className="relative">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center text-white font-bold text-sm shadow-inner overflow-hidden">
-                                    {post.profiles.photoURL ? (
-                                        <img src={post.profiles.photoURL} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="relative z-10">{post.profiles.username.charAt(0).toUpperCase()}</span>
-                                    )}
+                            {post.profiles.photoURL ? (
+                                <img src={post.profiles.photoURL} alt={post.profiles.username} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-white/10" />
+                            ) : (
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-500/20 flex items-center justify-center border border-white/10">
+                                    <span className="text-indigo-400 font-bold text-xs">{post.profiles.username?.[0]?.toUpperCase()}</span>
                                 </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm text-[var(--text-color)] tracking-wide hover:text-[var(--primary-accent)] transition-colors truncate">{post.profiles.username}</p>
-                                <div className="flex items-center space-x-2 flex-wrap">
-                                    <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider truncate max-w-[100px]">{post.domain_id}</span>
-                                    <span className="text-[10px] text-[var(--primary-accent)] font-mono uppercase tracking-wider opacity-60 whitespace-nowrap">• {new Date(post.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
+                            )}
+                            <div>
+                                <h3 className="font-bold text-white text-sm md:text-base leading-tight hover:text-indigo-400 transition-colors">
+                                    @{post.profiles.username}
+                                </h3>
+                                <span className="text-[10px] md:text-xs text-slate-500 font-mono">
+                                    {new Date(post.created_at).toLocaleDateString()}
+                                </span>
                             </div>
                         </div>
                         {isOwner && (
-                            <button onClick={onDelete} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-red-400 transition-colors opacity-50 group-hover:opacity-100">
+                            <button onClick={onDelete} className="text-slate-600 hover:text-red-500 transition-colors p-1">
                                 <TrashIcon className="w-4 h-4" />
                             </button>
                         )}
                     </div>
 
-                    <div className="pl-1 text-[var(--text-color)] leading-relaxed text-[15px] font-normal tracking-wide">
+                    <div className="mb-4">
                         <RichTextRenderer content={post.content} />
                     </div>
 
-                    {post.imageURL && (
-                        <div className="mt-4 rounded-xl overflow-hidden border border-white/10 max-h-96 w-full">
-                            <img src={post.imageURL} alt="Post Attachment" className="w-full h-full object-cover" />
+                    <div className="flex items-center justify-between text-slate-400 pt-3 md:pt-4 border-t border-white/5">
+                        <div className="flex space-x-4 md:space-x-6">
+                            <button
+                                onClick={onToggleLike}
+                                className={`flex items-center space-x-1.5 md:space-x-2 group transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'hover:text-pink-400'}`}
+                            >
+                                <HeartIcon className={`w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:scale-110 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                                <span className="text-xs font-medium">{post.like_count}</span>
+                            </button>
+                            <button
+                                onClick={() => setShowComments(!showComments)}
+                                className="flex items-center space-x-1.5 md:space-x-2 hover:text-cyan-400 transition-colors group"
+                            >
+                                <CommentIcon className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:scale-110" />
+                                <span className="text-xs font-medium">{post.comment_count}</span>
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                <div className="px-4 py-2 md:px-6 md:py-3 bg-[var(--bg-color)]/20 border-t border-[var(--glass-border)] flex items-center space-x-6">
-                    <button onClick={onToggleLike} className={`group/btn flex items-center space-x-2 transition-all ${post.is_liked_by_user ? 'text-pink-500' : 'text-slate-400 hover:text-white'}`}>
-                        <div className={`p-1.5 rounded-full transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'group-hover/btn:bg-white/5'}`}>
-                            <HeartIcon className={`w-4 h-4 transition-transform group-active/btn:scale-125 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
-                        </div>
-                        <span className="font-mono text-xs font-bold">{post.like_count}</span>
-                    </button>
+                {/* Comments Section */}
+                {showComments && (
+                    <div className="bg-[#0a0a0f]/50 border-t border-white/5 p-4 md:p-6 animate-fade-in-up">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Transmission Log</h4>
 
-                    <button onClick={() => setShowComments(!showComments)} className={`group/btn flex items-center space-x-2 transition-colors ${showComments ? 'text-indigo-400' : 'text-slate-400 hover:text-white'}`}>
-                        <div className={`p-1.5 rounded-full transition-colors ${showComments ? 'bg-indigo-500/10' : 'group-hover/btn:bg-white/5'}`}>
-                            <CommentIcon className="w-4 h-4" />
-                        </div>
-                        <span className="font-mono text-xs font-bold">{post.comment_count}</span>
-                    </button>
-                </div>
-
-                {(showComments || post.comments.length > 0) && (
-                    <div className="bg-[#020203]/50 p-6 border-t border-white/5 shadow-inner">
-                        <div className="space-y-3 mb-6">
-                            {threadedComments.map(comment => (
-                                <CommentCard
-                                    key={comment.id}
-                                    comment={comment}
-                                    onDelete={() => onDeleteComment(comment.id)}
-                                    onReply={(id, username) => { setReplyTo({ id, username }); }}
-                                    onDeleteComment={onDeleteComment}
-                                    currentUserId={currentUserId}
-                                />
-                            ))}
-                        </div>
-
-                        {currentUserId && (
-                            <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
-                                {replyTo && (
-                                    <div className="flex items-center justify-between px-2 text-xs text-indigo-400 mb-1 animate-fade-in-down">
-                                        <span>Replying to @{replyTo.username}</span>
-                                        <button type="button" onClick={() => setReplyTo(null)} className="hover:text-white">Cancel</button>
-                                    </div>
-                                )}
-                                <div className="flex space-x-3 items-end">
-                                    <div className={`flex-1 relative group/input transition-all duration-300 ${replyTo ? 'pl-2 border-l-2 border-indigo-500' : ''}`}>
-                                        <input
-                                            type="text"
-                                            value={commentContent}
-                                            onChange={(e) => setCommentContent(e.target.value)}
-                                            placeholder={replyTo ? `Reply to @${replyTo.username}...` : "Transmit reply..."}
-                                            className="relative w-full bg-[#0a0a10] border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-all placeholder-slate-600"
-                                            autoFocus={!!replyTo}
-                                        />
-                                    </div>
-                                    <button type="submit" disabled={isCommenting || !commentContent.trim()} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 uppercase tracking-wider hover:text-indigo-300">
-                                        {isCommenting ? '...' : 'Send'}
-                                    </button>
+                        <form onSubmit={handleCommentSubmit} className="mb-6 relative">
+                            {replyTo && (
+                                <div className="flex items-center justify-between bg-indigo-500/10 px-3 py-1.5 rounded-t-lg border border-indigo-500/20 border-b-0">
+                                    <span className="text-[10px] text-indigo-300 font-mono">Replying to @{replyTo.username}</span>
+                                    <button type="button" onClick={() => setReplyTo(null)} className="text-slate-500 hover:text-white">&times;</button>
                                 </div>
-                            </form>
-                        )}
+                            )}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={commentContent}
+                                    onChange={(e) => setCommentContent(e.target.value)}
+                                    placeholder="Add to the signal..."
+                                    className={`w-full bg-[#050508] border border-white/10 p-3 md:p-4 text-xs md:text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none ${replyTo ? 'rounded-b-xl rounded-t-none' : 'rounded-xl'}`}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!commentContent.trim() || isCommenting}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50 transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
+
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            {threadedComments.length === 0 ? (
+                                <p className="text-center text-slate-600 text-xs py-4">No signals yet.</p>
+                            ) : (
+                                threadedComments.map(comment => (
+                                    <CommentCard
+                                        key={comment.id}
+                                        comment={comment}
+                                        onDelete={() => onDeleteComment(comment.id)}
+                                        onReply={(id, username) => setReplyTo({ id, username })}
+                                        onDeleteComment={onDeleteComment}
+                                        currentUserId={currentUserId}
+                                    />
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
         </div>
-
     );
 };
 
-interface FeedViewProps {
-    setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>;
-}
-
-import TopicSelector from './TopicSelector';
-
-// ... (other imports)
-
-const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
-    const { user, profile } = useAuth();
+const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onViewChange }) => {
+    const { user } = useAuth();
+    const { error, setError } = useStatus();
     const [posts, setPosts] = useState<PostWithAuthorAndLikes[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadError, setLoadError] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [pullStartPoint, setPullStartPoint] = useState(0);
+    const [pullChange, setPullChange] = useState(0);
+    const scrollContainerRef = React.useRef<HTMLDivElement>(null);
     const [showTopicSelector, setShowTopicSelector] = useState(false);
 
     // Community Feed State
-    const [activeCommunityId, setActiveCommunityId] = useState<string | null>(null);
+    const [activeCommunity, setActiveCommunity] = useState<Community | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    // Pull to refresh state
-    const [pullStartPoint, setPullStartPoint] = useState<number>(0);
-    const [pullChange, setPullChange] = useState<number>(0);
-    const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-    const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-
-    const { setError } = useStatus();
 
     const fetchFeed = useCallback(async () => {
         if (!user) return;
-
-        // Check for interests IF NOT looking at a community
-        if (!activeCommunityId && !profile?.interests) {
-            setShowTopicSelector(true);
-            setIsLoading(false);
-            return;
-        }
-
-        setShowTopicSelector(false);
-        setIsLoading(true);
+        setLoading(true);
+        setError(null);
         try {
-            let likeClauses = '';
-            let queryParams: string[] = [];
+            // Logic:
+            // 1. If Active Community -> Filter by Tags
+            // 2. Else -> Show Global Feed (based on user interests)
 
-            if (activeCommunityId) {
-                // Community Logic: Filter by Tags
-                const comm = COMMUNITIES.find(c => c.id === activeCommunityId);
-                if (comm) {
-                    // Search for tags in domain_id OR content hashtags
-                    // Simplified: just match domain_id for now as "tags" in community often map to Topic IDs
-                    likeClauses = comm.tags.map(() => `(LOWER(p.domain_id) LIKE ? OR LOWER(p.content) LIKE ?)`).join(' OR ');
-                    // Flatten params: [tag1, tag1, tag2, tag2...]
-                    queryParams = comm.tags.flatMap(t => [`%${t.toLowerCase()}%`, `%#${t.toLowerCase()}%`]);
+            let sql = "";
+            let params: any[] = [];
+
+            if (activeCommunity) {
+                // Community Mode: Filter by tags using LIKE
+                const conditions = activeCommunity.tags.map(tag => `(LOWER(content) LIKE ? OR LOWER(domain_id) LIKE ?)`);
+                if (conditions.length === 0) {
+                    // Fallback if no tags?
+                    sql = `SELECT * FROM posts WHERE 1=0`; // Return nothing
+                } else {
+                    const whereClause = conditions.join(' OR ');
+                    // Add params twice for each tag (one for content, one for domain)
+                    const tagParams = activeCommunity.tags.flatMap(t => [`%${t.toLowerCase()}%`, `%${t.toLowerCase()}%`]);
+
+                    sql = `
+                        SELECT 
+                            p.*, 
+                            u.username, 
+                            u.photoURL,
+                            (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+                            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+                            EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
+                        FROM posts p 
+                        LEFT JOIN profiles u ON p.user_id = u.id 
+                        WHERE ${whereClause}
+                        ORDER BY p.created_at DESC
+                        LIMIT 50
+                    `;
+                    params = [user.uid, ...tagParams];
                 }
             } else {
-                // Default Logic: User Interests
-                const interests = profile?.interests?.split(',').filter(Boolean) || [];
-                if (interests.length === 0) {
+                // Standard Feed Logic
+                // 1. Get User Interests
+                const profileRes = await execute('SELECT interests FROM profiles WHERE id = ?', [user.uid]);
+                const profile = profileRes[0] as { interests?: string };
+
+                if (!profile?.interests || profile.interests.length === 0) {
                     setShowTopicSelector(true);
-                    setIsLoading(false);
+                    setLoading(false);
                     return;
                 }
-                likeClauses = interests.map(() => `LOWER(p.domain_id) LIKE ?`).join(' OR ');
-                queryParams = interests.map(i => `%${i.toLowerCase()}%`);
+
+                // Parse interests
+                const interestTags = profile.interests.split(',').map(s => s.trim().toLowerCase());
+
+                // Add related/normalized tags (simple expansion)
+                const expandedTags = new Set(interestTags);
+                interestTags.forEach(tag => {
+                    // simple pluralization
+                    if (tag.endsWith('s')) expandedTags.add(tag.slice(0, -1));
+                    else expandedTags.add(tag + 's');
+                });
+
+                const finalTags = Array.from(expandedTags);
+
+                // Build Dynamic Query
+                const conditions = finalTags.map(() => `LOWER(domain_id) = ? OR LOWER(content) LIKE ?`);
+                const queryWhere = conditions.join(' OR ');
+                const queryParams = finalTags.flatMap(t => [t, `%#${t}%`]);
+
+                sql = `
+                    SELECT 
+                        p.*, 
+                        u.username, 
+                        u.photoURL,
+                        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+                        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+                        EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
+                    FROM posts p 
+                    LEFT JOIN profiles u ON p.user_id = u.id 
+                    WHERE ${queryWhere}
+                    ORDER BY p.created_at DESC
+                    LIMIT 50
+                `;
+
+                params = [user.uid, ...queryParams];
             }
 
-            if (!likeClauses) {
-                setPosts([]);
-                setIsLoading(false);
-                return;
-            }
+            const rawPosts = await execute(sql, params);
 
-            const sql = `
-                SELECT 
-                    p.*, 
-                    u.username, 
-                    u.photoURL,
-                    (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
-                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
-                    EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked_by_user
-                FROM posts p 
-                LEFT JOIN profiles u ON p.user_id = u.id 
-                WHERE ${likeClauses}
-                ORDER BY like_count DESC, p.created_at DESC
-                LIMIT 50
-            `;
-
-            const rawPosts = await execute(sql, [user.uid, ...queryParams]);
-
-            const postsWithComments = await Promise.all(rawPosts.map(async (post: any) => {
+            // Fetch comments for these posts
+            const postIds = rawPosts.map((p: any) => p.id);
+            if (postIds.length > 0) {
+                const placeholders = postIds.map(() => '?').join(',');
                 const commentsSql = `
-                    SELECT c.*, u.username, u.photoURL 
+                    SELECT c.*, p.username, p.photoURL 
                     FROM comments c
-                    LEFT JOIN profiles u ON c.user_id = u.id
-                    WHERE c.post_id = ?
+                    LEFT JOIN profiles p ON c.user_id = p.id
+                    WHERE c.post_id IN (${placeholders})
                     ORDER BY c.created_at ASC
                 `;
-                const comments = await execute(commentsSql, [post.id]);
+                const comments = await execute(commentsSql, postIds);
 
-                return {
-                    id: post.id,
-                    content: post.content,
-                    imageURL: post.imageURL,
-                    created_at: post.created_at,
-                    user_id: post.user_id,
-                    domain_id: post.domain_id,
-                    profiles: {
-                        username: post.username || 'Unknown',
-                        photoURL: post.photoURL
-                    },
-                    like_count: Number(post.like_count),
-                    is_liked_by_user: Boolean(post.is_liked_by_user),
-                    comment_count: Number(post.comment_count),
-                    comments: comments.map((c: any) => ({
-                        id: c.id,
-                        user_id: c.user_id,
-                        parent_id: c.parent_id,
-                        content: c.content,
-                        created_at: c.created_at,
-                        profiles: {
-                            username: c.username || 'Unknown',
-                            photoURL: c.photoURL
-                        }
-                    }))
-                };
-            }));
-
-            setPosts(postsWithComments);
-
-        } catch (e) {
-            console.error("Feed error", e);
-            setLoadError(true);
-            setError("Failed to load your sphere feed.");
+                const postsWithComments = rawPosts.map((post: any) => ({
+                    ...post,
+                    comments: comments.filter((c: any) => c.post_id === post.id).map((c: any) => ({ ...c, profiles: { username: c.username, photoURL: c.photoURL } }))
+                }));
+                setPosts(postsWithComments);
+            } else {
+                setPosts(rawPosts.map((p: any) => ({ ...p, comments: [] })));
+            }
+        } catch (err: any) {
+            console.error(err);
+            setError("Signal lost. Reconnecting...");
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
-    }, [user, profile, setError, activeCommunityId]);
+    }, [user, activeCommunity, setError]);
 
     useEffect(() => {
         fetchFeed();
     }, [fetchFeed]);
 
-    // Copy handlers from PostView... simplified
     const handleToggleLike = async (post: PostWithAuthorAndLikes) => {
         if (!user) return;
-        setPosts(currentPosts => currentPosts.map(p =>
-            p.id === post.id
-                ? { ...p, is_liked_by_user: !p.is_liked_by_user, like_count: p.is_liked_by_user ? p.like_count - 1 : p.like_count + 1 }
-                : p
-        ));
+        const isLiked = post.is_liked_by_user;
+        setPosts(current => current.map(p => {
+            if (p.id === post.id) {
+                return {
+                    ...p,
+                    is_liked_by_user: !isLiked,
+                    like_count: isLiked ? p.like_count - 1 : p.like_count + 1
+                };
+            }
+            return p;
+        }));
+
         try {
             if (post.is_liked_by_user) await execute('DELETE FROM likes WHERE post_id = ? AND user_id = ?', [post.id, user.uid]);
             else await execute('INSERT INTO likes (id, post_id, user_id, created_at) VALUES (UUID(), ?, ?, ?)', [post.id, user.uid, new Date().toISOString()]);
@@ -366,8 +373,7 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
             const newId = crypto.randomUUID();
             const now = new Date().toISOString();
             await execute('INSERT INTO comments (id, post_id, user_id, content, created_at, parent_id) VALUES (?, ?, ?, ?, ?, ?)', [newId, postId, user.uid, content.trim(), now, parentId || null]);
-            // Ideally refetch or update local state complexly... for now just refetch for simplicity or simple local update
-            fetchFeed(); // Lazy way to refresh comments
+            fetchFeed();
         } catch (err: any) { setError("Failed to post comment."); }
     };
 
@@ -391,7 +397,6 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
         const dy = currentY - pullStartPoint;
 
         if (dy > 0 && scrollContainerRef.current?.scrollTop === 0) {
-            // Add resistance/dampening to the pull
             setPullChange(dy * 0.4);
         } else {
             setPullChange(0);
@@ -399,9 +404,9 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
     };
 
     const onTouchEnd = async () => {
-        if (pullChange > 70) { // Threshold to trigger refresh
+        if (pullChange > 70) {
             setIsRefreshing(true);
-            setPullChange(70); // Keep at loading height
+            setPullChange(70);
             await fetchFeed();
             setIsRefreshing(false);
         }
@@ -411,162 +416,124 @@ const FeedView: React.FC<FeedViewProps> = ({ setCurrentView }) => {
 
 
     return (
-        // Flex row to accommodate Desktop Sidebar
-        <div className="w-full h-full flex items-start relative bg-transparent overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center relative overflow-hidden">
 
-            {/* Desktop Sidebar (Permanent) */}
-            <div className="hidden md:block h-full flex-shrink-0">
-                <CommunitySidebar
-                    activeId={activeCommunityId}
-                    onSelect={setActiveCommunityId}
-                    isOpen={true} // Always open on desktop
-                    onClose={() => { }}
-                />
-            </div>
+            {/* Sidebar (Absolute Overlay) */}
+            <CommunitySidebar
+                activeId={activeCommunity?.id || null}
+                onSelect={(comm) => { setActiveCommunity(comm); setIsSidebarOpen(false); }}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+            />
 
-            {/* Main Feed Column */}
-            <div className="flex-1 h-full flex flex-col items-center relative overflow-hidden">
-
-                {/* Mobile Sidebar (Absolute) */}
-                <CommunitySidebar
-                    activeId={activeCommunityId}
-                    onSelect={setActiveCommunityId}
-                    isOpen={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
-                />
-
-                {showTopicSelector ? (
-                    <div className="w-full h-full overflow-y-auto custom-scrollbar">
-                        <div className="min-h-full flex items-center justify-center py-20">
-                            <TopicSelector onComplete={() => { setShowTopicSelector(false); fetchFeed(); }} />
-                        </div>
+            {showTopicSelector ? (
+                <div className="w-full h-full overflow-y-auto custom-scrollbar">
+                    <div className="min-h-full flex items-center justify-center py-20">
+                        <TopicSelector onComplete={() => { setShowTopicSelector(false); fetchFeed(); }} />
                     </div>
-                ) : (
+                </div>
+            ) : (
+                <div
+                    ref={scrollContainerRef}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    className="w-full h-full max-w-4xl px-3 md:px-4 pt-20 md:pt-24 pb-20 md:pb-32 overflow-y-auto custom-scrollbar snap-y snap-mandatory md:snap-none relative"
+                >
+                    {/* Pull to Refresh Indicator */}
                     <div
-                        ref={scrollContainerRef}
-                        onTouchStart={onTouchStart}
-                        onTouchMove={onTouchMove}
-                        onTouchEnd={onTouchEnd}
-                        className="w-full h-full max-w-4xl px-3 md:px-4 pt-20 md:pt-24 pb-20 md:pb-32 overflow-y-auto custom-scrollbar snap-y snap-mandatory md:snap-none relative"
+                        style={{ height: `${pullChange}px`, opacity: Math.min(pullChange / 70, 1) }}
+                        className="w-full flex items-center justify-center overflow-hidden transition-all duration-200 ease-out -mt-4 md:mt-0"
                     >
-                        {/* Pull to Refresh Indicator */}
-                        <div
-                            style={{ height: `${pullChange}px`, opacity: Math.min(pullChange / 70, 1) }}
-                            className="w-full flex items-center justify-center overflow-hidden transition-all duration-200 ease-out -mt-4 md:mt-0"
-                        >
-                            {isRefreshing ? (
-                                <div className="flex flex-col items-center py-2">
-                                    <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-                                </div>
-                            ) : (
-                                <div className={`transform transition-transform duration-300 ${pullChange > 70 ? 'rotate-180' : ''}`}>
-                                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* ... content ... */}
-                        <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start">
-
-                            {/* Header Container */}
-                            <div className="flex items-center justify-center space-x-3 mb-1 md:mb-0 relative w-full md:w-auto">
-
-                                {/* Mobile Open Sidebar Button */}
-                                <button
-                                    onClick={() => setIsSidebarOpen(true)}
-                                    className="md:hidden absolute left-0 p-2 text-indigo-400 hover:text-white"
-                                >
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg>
-                                </button>
-
-                                {/* Icon */}
-                                <div className="hidden md:block p-3 bg-white/5 rounded-full border border-white/10 animate-pulse-slow">
-                                    <GlobeIcon className="w-6 h-6 text-indigo-400" />
-                                </div>
-
-                                <div className="flex flex-col text-center md:text-left">
-                                    <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter italic">
-                                        {activeCommunityId
-                                            ? COMMUNITIES.find(c => c.id === activeCommunityId)?.name
-                                            : "Your Feed"
-                                        }
-                                    </h1>
-                                    <p className="text-slate-500 text-xs md:text-sm hidden md:block">
-                                        {activeCommunityId
-                                            ? `Transmitting on frequencies: ${COMMUNITIES.find(c => c.id === activeCommunityId)?.tags.join(', ')}`
-                                            : "Curated transmissions from your selected spheres."
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-
-                            {!activeCommunityId && (
-                                <button onClick={() => setShowTopicSelector(true)} className="mt-1 md:mt-2 text-[10px] md:text-xs text-indigo-400 hover:text-white transition-colors uppercase tracking-widest font-bold">Adjust Spheres</button>
-                            )}
-                        </div>
-
-                        {isLoading ? (
-                            <div className="flex justify-center pt-20">
-                                <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                            </div>
-                        ) : loadError ? (
-                            <div className="text-center py-20 opacity-70 flex flex-col items-center snap-start h-[80vh] justify-center">
-                                <p className="text-red-400 mb-2 font-bold">Signal Interrupted</p>
-                                <button
-                                    onClick={() => { setLoadError(false); fetchFeed(); }}
-                                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-                                >
-                                    Retry Connection
-                                </button>
-                            </div>
-                        ) : posts.length === 0 ? (
-                            <div className="text-center py-20 opacity-50 flex flex-col items-center snap-start h-[80vh] justify-center">
-                                <p>No transmissions found on this frequency.</p>
-                                <p className="text-xs mt-2 text-slate-400">Try switching communities or expanding interests.</p>
-                                {activeCommunityId ? (
-                                    <button
-                                        onClick={() => setActiveCommunityId(null)}
-                                        className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-                                    >
-                                        Return to Global Feed
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => setShowTopicSelector(true)}
-                                        className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-                                    >
-                                        Select Interests
-                                    </button>
-                                )}
+                        {isRefreshing ? (
+                            <div className="flex flex-col items-center py-2">
+                                <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
                             </div>
                         ) : (
-                            posts.map((post) => (
-                                <div key={post.id} className="snap-start flex items-center justify-center w-full min-h-[85vh] md:min-h-0 md:h-auto py-4 md:py-0">
-                                    <PostCard
-                                        post={post}
-                                        onToggleLike={() => handleToggleLike(post)}
-                                        onDelete={() => handleDeletePost(post.id)}
-                                        onComment={(content, parentId) => handleCreateComment(post.id, content, parentId)}
-                                        onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
-                                        currentUserId={user?.uid}
-                                        onUserClick={(uid) => setCurrentView((prev) => ({ ...prev, overlayProfileId: uid }))}
-                                    />
-                                </div>
-                            ))
-                        )}
-                        {/* Snap-aligned Loading Trigger (Visual Only for now as pagination is implicit limit 50) */}
-                        {posts.length > 0 && (
-                            <div className="snap-start w-full min-h-[20vh] flex flex-col items-center justify-center py-10 opacity-50">
-                                <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500">Synchronizing...</p>
+                            <div className={`transform transition-transform duration-300 ${pullChange > 70 ? 'rotate-180' : ''}`}>
+                                <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
                             </div>
                         )}
                     </div>
-                )}
-            </div>
-        </div >
+
+                    {/* Feed Content */}
+                    <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start">
+
+                        {/* Header Container */}
+                        <div className="flex items-center justify-center space-x-3 mb-1 md:mb-0 relative w-full md:w-auto">
+
+                            {/* Sidebar Toggle Button (Visible on both Mobile and Desktop now) */}
+                            <button
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="absolute left-0 -ml-2 md:-ml-8 p-2 text-indigo-400 hover:text-white transition-colors"
+                                title="Open Frequencies"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                            </button>
+
+                            {/* Icon */}
+                            <div className="hidden md:block p-3 bg-white/5 rounded-full border border-white/10 animate-pulse-slow">
+                                <GlobeIcon className="w-6 h-6 text-indigo-400" />
+                            </div>
+
+                            <div className="flex flex-col text-center md:text-left">
+                                <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter italic">
+                                    {activeCommunity
+                                        ? activeCommunity.name
+                                        : "Your Feed"
+                                    }
+                                </h1>
+                                <p className="text-slate-500 text-xs md:text-sm hidden md:block">
+                                    {activeCommunity
+                                        ? `Transmitting frequency: ${activeCommunity.tags.join(', ')}`
+                                        : "Curated transmissions from your selected spheres."
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="text-xs text-indigo-400 animate-pulse font-mono tracking-widest">RECEIVING SIGNAL...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                            <p className="text-red-400 font-bold mb-2">Signal Lost</p>
+                            <p className="text-slate-500 text-sm mb-4">{error}</p>
+                            <button onClick={fetchFeed} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white text-xs font-bold uppercase tracking-wider">Retry Connection</button>
+                        </div>
+                    ) : posts.length === 0 ? (
+                        <div className="text-center py-20 px-6">
+                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">📡</span>
+                            </div>
+                            <h3 className="text-white font-bold mb-2">No signals detected</h3>
+                            <p className="text-slate-500 text-sm max-w-xs mx-auto">This frequency is quiet. Be the first to broadcast.</p>
+                        </div>
+                    ) : (
+                        posts.map(post => (
+                            <div key={post.id} className="snap-center">
+                                <PostCard
+                                    post={post}
+                                    onToggleLike={() => handleToggleLike(post)}
+                                    onDelete={() => handleDeletePost(post.id)}
+                                    onComment={(content, parentId) => handleCreateComment(post.id, content, parentId)}
+                                    onDeleteComment={(cid) => handleDeleteComment(post.id, cid)}
+                                    currentUserId={user?.uid}
+                                    onUserClick={(uid) => onViewChange({ type: ViewType.Profile, userId: uid })}
+                                // Fix: onUserClick should map to correct profile view usage
+                                />
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
+
+        </div>
     );
 };
 

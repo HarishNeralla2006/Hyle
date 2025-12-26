@@ -1,15 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { COMMUNITIES, Community } from '../lib/communities';
-
-// Icons
-const Icons: Record<string, React.FC<{ className?: string }>> = {
-    flame: ({ className }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>,
-    chip: ({ className }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
-    palette: ({ className }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>,
-    globe: ({ className }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-    atom: ({ className }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>, // Generic science
-    music: ({ className }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-}
+import { fetchCommunities, createCommunity, Community } from '../lib/communities';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LinkProps {
     community: Community;
@@ -18,39 +9,28 @@ interface LinkProps {
 }
 
 const CommunityLink: React.FC<LinkProps> = ({ community, isActive, onClick }) => {
-    const Icon = Icons[community.iconId] || Icons.globe;
-
     return (
         <button
             onClick={onClick}
-            className={`w-full group flex items-center p-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5 border border-transparent hover:border-white/5'
-                }`}
+            className={`w - full group flex items - center p - 3 rounded - xl transition - all duration - 300 relative overflow - hidden ${isActive ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5 border border-transparent hover:border-white/5'
+                } `}
         >
             {/* Active Glow */}
             {isActive && (
-                <div
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--primary-accent)] shadow-[0_0_15px_var(--primary-accent)]"
-                ></div>
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--primary-accent)] shadow-[0_0_15px_var(--primary-accent)]"></div>
             )}
 
-            <div className={`mr-4 p-2 rounded-lg transition-colors ${isActive ? 'bg-white/10 text-[var(--primary-accent)]' : 'bg-white/5 text-slate-400 group-hover:text-white'}`}>
-                <Icon className="w-5 h-5" />
+            <div className={`mr - 4 p - 2 rounded - lg transition - colors ${isActive ? 'bg-white/10 text-[var(--primary-accent)]' : 'bg-white/5 text-slate-400 group-hover:text-white'} `}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             </div>
 
             <div className="flex-1 text-left">
-                <h3 className={`font-bold text-sm tracking-wide transition-colors ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'}`}>
+                <h3 className={`font - bold text - sm tracking - wide transition - colors ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'} `}>
                     {community.name}
                 </h3>
                 <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider truncate max-w-[160px]">
-                    {community.tags[0]} • {community.tags[1]}
+                    #{community.tags[0]} {community.tags[1] ? `#${community.tags[1]} ` : ''}
                 </p>
-            </div>
-
-            {/* Signal Indicator (Mock) */}
-            <div className="flex flex-col space-y-0.5 items-end opacity-60">
-                <div className={`w-1 h-3 rounded-full ${isActive ? 'bg-yellow-400 shadow-[0_0_5px_yellow]' : 'bg-slate-700'}`}></div>
-                <div className="w-1 h-2 rounded-full bg-slate-700"></div>
-                <div className={`w-1 h-1.5 rounded-full ${isActive ? 'bg-indigo-500' : 'bg-slate-700'}`}></div>
             </div>
         </button>
     );
@@ -58,67 +38,144 @@ const CommunityLink: React.FC<LinkProps> = ({ community, isActive, onClick }) =>
 
 interface SidebarProps {
     activeId: string | null;
-    onSelect: (id: string | null) => void;
+    onSelect: (community: Community | null) => void;
     isOpen: boolean;
     onClose: () => void;
 }
 
 const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, onClose }) => {
+    const { user } = useAuth();
+    const [communities, setCommunities] = useState<Community[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Clicking outside closes it on mobile
+    // Creation State
+    const [isCreating, setIsCreating] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newDesc, setNewDesc] = useState('');
+    const [newTags, setNewTags] = useState('');
+
+    const loadCommunities = async () => {
+        setLoading(true);
+        const data = await fetchCommunities();
+        setCommunities(data);
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            loadCommunities();
+        }
+    }, [isOpen]);
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !newName || !newTags) return;
+
+        const tagsArray = newTags.split(',').map(t => t.trim().replace(/^#/, ''));
+        const success = await createCommunity(newName, newDesc, tagsArray, user.uid);
+
+        if (success) {
+            setNewName(''); setNewDesc(''); setNewTags('');
+            setIsCreating(false);
+            loadCommunities();
+        }
+    };
+
+    // If showing creation modal
+    if (isCreating) {
+        return (
+            <div className={`fixed inset - 0 bg - black / 80 backdrop - blur - xl z - 50 flex items - center justify - center p - 4`}>
+                <div className="bg-[#050508] border border-[var(--glass-border)] rounded-2xl p-6 w-full max-w-md shadow-2xl animate-pop-in">
+                    <h2 className="text-xl font-black text-white italic mb-1">Create Frequency</h2>
+                    <p className="text-slate-500 text-xs mb-6">Define a new signal source for the network.</p>
+
+                    <form onSubmit={handleCreate} className="space-y-4">
+                        <div>
+                            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Name</label>
+                            <input value={newName} onChange={e => setNewName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-indigo-500 outline-none mt-1" placeholder="e.g. The Indie Forge" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tags (Comma Separated)</label>
+                            <input value={newTags} onChange={e => setNewTags(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-indigo-500 outline-none mt-1" placeholder="e.g. gamedev, pixelart" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Description</label>
+                            <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-indigo-500 outline-none mt-1 h-20" placeholder="What is this frequency transmitting?" />
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button type="button" onClick={() => setIsCreating(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 font-bold text-xs uppercase tracking-wider">Cancel</button>
+                            <button type="submit" disabled={!newName || !newTags} className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50">Create Signal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <>
-            {/* Backdrop (Mobile Only) */}
+            {/* Backdrop (Mobile & Desktop Overlay Mode) */}
             <div
-                className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset - 0 bg - black / 80 backdrop - blur - sm z - 40 transition - opacity duration - 300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} `}
                 onClick={onClose}
             />
 
-            {/* Sidebar Panel */}
+            {/* Sidebar Panel - Fixed Left */}
             <div
-                className={`fixed top-0 left-0 bottom-0 w-80 bg-[#050508]/90 backdrop-blur-xl border-r border-[var(--glass-border)] z-50 transform transition-transform duration-300 ease-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
-                    } md:static md:w-72 md:bg-transparent md:border-none md:block shadow-2xl md:shadow-none h-screen pt-20 pb-10 px-4 overflow-y-auto custom-scrollbar flex flex-col`}
+                className={`fixed top - 0 left - 0 bottom - 0 w - 80 bg - [#050508] / 95 backdrop - blur - xl border - r border - [var(--glass - border)]z - 50 transform transition - transform duration - 300 ease - out ${isOpen ? 'translate-x-0' : '-translate-x-full'} shadow - 2xl h - screen pt - 20 pb - 10 px - 4 overflow - y - auto custom - scrollbar flex flex - col`}
             >
-                <div className="mb-8 px-2">
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Frequencies</h2>
-
-                    {/* "All Spheres" Option */}
-                    <button
-                        onClick={() => { onSelect(null); onClose(); }}
-                        className={`w-full group flex items-center p-3 rounded-xl transition-all duration-300 mb-2 ${activeId === null ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5 border border-transparent'}`}
-                    >
-                        {activeId === null && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 shadow-[0_0_15px_indigo]"></div>
-                        )}
-                        <div className={`mr-4 p-2 rounded-lg transition-colors ${activeId === null ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-slate-400'}`}>
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                        </div>
-                        <div className="text-left">
-                            <h3 className={`font-bold text-sm tracking-wide ${activeId === null ? 'text-white' : 'text-slate-300'}`}>All Spheres</h3>
-                            <p className="text-[10px] text-slate-500 font-mono">Global Feed</p>
-                        </div>
+                <div className="mb-4 flex items-center justify-between px-2">
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Frequencies</h2>
+                    <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
+                </div>
 
-                    <div className="h-px bg-white/10 my-4 mx-2"></div>
+                {/* "All Spheres" Option */}
+                <button
+                    onClick={() => { onSelect(null); onClose(); }}
+                    className={`w-full group flex items-center p-3 rounded-xl transition-all duration-300 mb-2 ${activeId === null ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5 border border-transparent'}`}
+                >
+                    {activeId === null && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 shadow-[0_0_15px_indigo]"></div>
+                    )}
+                    <div className={`mr-4 p-2 rounded-lg transition-colors ${activeId === null ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-slate-400'}`}>
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                    </div>
+                    <div className="text-left">
+                        <h3 className={`font-bold text-sm tracking-wide ${activeId === null ? 'text-white' : 'text-slate-300'}`}>All Spheres</h3>
+                        <p className="text-[10px] text-slate-500 font-mono">Global Feed</p>
+                    </div>
+                </button>
 
-                    {/* Community List */}
-                    <div className="space-y-2">
-                        {COMMUNITIES.map(comm => (
+                <div className="h-px bg-white/10 my-4 mx-2"></div>
+
+                {/* Community List */}
+                <div className="space-y-2 flex-1">
+                    {loading ? (
+                        <div className="p-4 text-center text-xs text-slate-600 animate-pulse">Scanning frequencies...</div>
+                    ) : communities.length === 0 ? (
+                        <div className="p-4 text-center">
+                            <p className="text-xs text-slate-500 mb-2">No signals detected.</p>
+                        </div>
+                    ) : (
+                        communities.map(comm => (
                             <CommunityLink
                                 key={comm.id}
                                 community={comm}
                                 isActive={activeId === comm.id}
-                                onClick={() => { onSelect(comm.id); onClose(); }}
+                                onClick={() => { onSelect(comm); onClose(); }}
                             />
-                        ))}
-                    </div>
+                        ))
+                    )}
                 </div>
 
-                <div className="mt-auto px-4 py-6 bg-white/5 rounded-2xl border border-white/5 text-center">
-                    <p className="text-[10px] text-slate-400 leading-relaxed">
-                        Don't see your tribe? <br />
-                        <span className="text-indigo-400 cursor-pointer hover:underline">Request a Frequency</span>
-                    </p>
+                <div className="mt-4 pt-4 border-t border-white/5">
+                    <button onClick={() => setIsCreating(true)} className="w-full py-3 rounded-xl border border-dashed border-white/20 text-slate-400 hover:text-white hover:border-white/40 transition-all text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        Create Frequency
+                    </button>
                 </div>
             </div>
         </>

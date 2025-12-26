@@ -149,7 +149,7 @@ const Home: React.FC = () => {
             case ViewType.Settings:
                 return <SettingsView setCurrentView={setCurrentView} />;
             case ViewType.Feed:
-                return <FeedView setCurrentView={setCurrentView} />;
+                return <FeedView onViewChange={setCurrentView} />;
 
             case ViewType.Auth:
                 return <div className="flex-1 flex items-center justify-center"><AuthView /></div>;
