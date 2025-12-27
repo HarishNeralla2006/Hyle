@@ -29,7 +29,7 @@ export async function createCommunityAction(name: string, description: string, t
                     }
                 }
 
-                if (bestMatch && bestScore > 0.85) {
+                if (bestMatch && bestScore > 0.55) {
                     console.log(` [Server Action] Semantic Match Found: "${name}" -> "${bestMatch.name}" (Score: ${bestScore.toFixed(2)})`);
                     return bestMatch; // Return existing instead of creating new
                 }
