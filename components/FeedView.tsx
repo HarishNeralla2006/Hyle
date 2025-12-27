@@ -47,18 +47,22 @@ const CommentCard: React.FC<{ comment: Comment & { replies?: Comment[] }, onDele
                     <span className="font-bold text-xs text-indigo-300 tracking-wide font-mono">{comment.profiles.username}</span>
                     <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">:: {new Date(comment.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <button onClick={() => onReply(comment.id, comment.profiles.username)} className="text-[10px] text-slate-500 hover:text-indigo-400 transition-colors uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100">
-                        Reply
+                <div className="flex items-center space-x-3">
+                    <button onClick={() => onReply(comment.id, comment.profiles.username)} className="text-[10px] text-slate-500 hover:text-indigo-400 transition-colors uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100 flex items-center gap-1">
+                        <span>Reply</span>
                     </button>
                     {isOwner && (
                         <button onClick={onDelete} className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                            <TrashIcon className="w-3 h-3" />
+                            <TrashIcon className="w-3.5 h-3.5" />
                         </button>
                     )}
                 </div>
             </div>
-            <p className="text-slate-300 text-sm leading-relaxed mb-2">{comment.content}</p>
+            <div className="bg-white/5 rounded-lg p-3 text-slate-200 text-sm leading-relaxed mb-2 border border-white/5 relative">
+                {/* Subtle tip indicator */}
+                <div className="absolute top-0 left-4 -mt-1 w-2 h-2 bg-[#2a2a30] rotate-45 border-t border-l border-white/5"></div>
+                {comment.content}
+            </div>
             {/* Recursive Replies */}
             {comment.replies && comment.replies.length > 0 && (
                 <div className="space-y-3 mt-3">
@@ -99,30 +103,33 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
     const threadedComments = React.useMemo(() => organizeComments(post.comments), [post.comments]);
 
     return (
-        <div className="relative group perspective-1000 mb-6 w-full max-w-2xl mx-auto">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-[20px] blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
-            <div className="relative glass-panel rounded-[20px] p-0 overflow-hidden border border-[var(--glass-border)] bg-[var(--glass-surface)] transition-all duration-300 group-hover:-translate-y-1">
-                <div className="p-4 md:p-6">
-                    <div className="flex justify-between items-start mb-3 md:mb-4">
-                        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onUserClick(post.user_id)}>
-                            {post.profiles.photoURL ? (
-                                <img src={post.profiles.photoURL} alt={post.profiles.username} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-white/10" />
-                            ) : (
-                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-500/20 flex items-center justify-center border border-white/10">
-                                    <span className="text-indigo-400 font-bold text-xs">{post.profiles.username?.[0]?.toUpperCase()}</span>
-                                </div>
-                            )}
+        <div className="relative group perspective-1000 mb-8 w-full max-w-2xl mx-auto">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 to-indigo-600/20 rounded-[24px] blur-xl opacity-0 group-hover:opacity-100 transition duration-700"></div>
+            <div className="relative glass-panel rounded-[24px] p-0 overflow-hidden border border-white/5 bg-[#0a0a0f]/80 backdrop-blur-2xl transition-all duration-300 group-hover:-translate-y-1 shadow-2xl shadow-black/50">
+                <div className="p-5 md:p-7">
+                    <div className="flex justify-between items-start mb-4 md:mb-5">
+                        <div className="flex items-center space-x-3.5 cursor-pointer group/author" onClick={() => onUserClick(post.user_id)}>
+                            <div className="relative">
+                                {post.profiles.photoURL ? (
+                                    <img src={post.profiles.photoURL} alt={post.profiles.username} className="w-10 h-10 md:w-11 md:h-11 rounded-full border border-white/10 shadow-lg object-cover" />
+                                ) : (
+                                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 shadow-lg">
+                                        <span className="text-indigo-300 font-bold text-sm">{post.profiles.username?.[0]?.toUpperCase()}</span>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 rounded-full ring-2 ring-white/0 group-hover/author:ring-white/20 transition-all duration-300"></div>
+                            </div>
                             <div>
-                                <h3 className="font-bold text-white text-sm md:text-base leading-tight hover:text-indigo-400 transition-colors">
+                                <h3 className="font-bold text-white text-base leading-tight group-hover/author:text-indigo-400 transition-colors tracking-tight">
                                     @{post.profiles.username}
                                 </h3>
-                                <span className="text-[10px] md:text-xs text-slate-500 font-mono">
-                                    {new Date(post.created_at).toLocaleDateString()}
+                                <span className="text-[11px] text-slate-500 font-medium tracking-wide">
+                                    {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                 </span>
                             </div>
                         </div>
                         {isOwner && (
-                            <button onClick={onDelete} className="text-slate-600 hover:text-red-500 transition-colors p-1">
+                            <button onClick={onDelete} className="text-slate-600 hover:text-red-500 hover:bg-red-500/10 transition-all p-2 rounded-full opacity-0 group-hover:opacity-100">
                                 <TrashIcon className="w-4 h-4" />
                             </button>
                         )}
@@ -146,23 +153,26 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         <RichTextRenderer content={post.content} />
                     </div>
 
-                    <div className="flex items-center justify-between text-slate-400 pt-3 md:pt-4 border-t border-white/5">
-                        <div className="flex space-x-4 md:space-x-6">
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={onToggleLike}
-                                className={`flex items-center space-x-1.5 md:space-x-2 group transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'hover:text-pink-400'}`}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500' : 'hover:bg-white/5 text-slate-400 hover:text-pink-400'}`}
                             >
-                                <HeartIcon className={`w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:scale-110 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
-                                <span className="text-xs font-medium">{post.like_count}</span>
+                                <HeartIcon className={`w-5 h-5 transition-transform group-active/like:scale-75 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                                <span className="text-sm font-semibold">{post.like_count > 0 ? post.like_count : 'Like'}</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(!showComments)}
-                                className="flex items-center space-x-1.5 md:space-x-2 hover:text-cyan-400 transition-colors group"
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/comment ${showComments ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-white/5 text-slate-400 hover:text-indigo-400'}`}
                             >
-                                <CommentIcon className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:scale-110" />
-                                <span className="text-xs font-medium">{post.comment_count}</span>
+                                <CommentIcon className="w-5 h-5 transition-transform group-active/comment:scale-75" />
+                                <span className="text-sm font-semibold">{post.comment_count > 0 ? post.comment_count : 'Comment'}</span>
                             </button>
                         </div>
+                        <button className="p-2 text-slate-500 hover:text-white transition-colors rounded-full hover:bg-white/5">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                        </button>
                     </div>
                 </div>
 
