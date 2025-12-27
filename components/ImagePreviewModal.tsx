@@ -200,7 +200,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
     }
   };
 
-  const searchQuery = `${domain.name} aesthetic cinematic`;
+  const searchQuery = `${domain.name}`;
   const imageUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(searchQuery)}&w=800&h=450&c=7&rs=1&p=0&dpr=2&pid=1.7&mkt=en-US&adlt=moderate`;
 
   return (
@@ -292,7 +292,35 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <button onClick={() => onSeePosts(domain)} className="py-3.5 px-4 bg-[var(--primary-accent)] hover:bg-indigo-500 rounded-2xl text-white font-semibold transition-all shadow-lg shadow-indigo-500/20 active:scale-95">Enter Topic</button>
+          <button onClick={() => {
+            // VECTOR INTERCEPTOR (Sphere -> Channel)
+            // Maps colloquial/duplicate terms to their Canonical Channels without AI.
+            const VECTOR_MAP: { [key: string]: string } = {
+              'maths': 'Mathematics',
+              'math': 'Mathematics',
+              'sci': 'Science',
+              'comp sci': 'Computer Science',
+              'computer-science': 'Computer Science',
+              // Case-insensitive fallback logic handles capitalization below
+            };
+
+            const rawName = domain.name;
+            const lowerName = rawName.toLowerCase();
+
+            if (VECTOR_MAP[lowerName]) {
+              const canonicalName = VECTOR_MAP[lowerName];
+              // Create a synthetic domain object for the canonical channel
+              const canonicalDomain: Domain = {
+                ...domain,
+                id: canonicalName, // This controls the URL/DB query
+                name: canonicalName // This controls the Display Title
+              };
+              console.log(`[Vector Interceptor] Redirecting "${rawName}" -> "${canonicalName}"`);
+              onSeePosts(canonicalDomain);
+            } else {
+              onSeePosts(domain);
+            }
+          }} className="py-3.5 px-4 bg-[var(--primary-accent)] hover:bg-indigo-500 rounded-2xl text-white font-semibold transition-all shadow-lg shadow-indigo-500/20 active:scale-95">Enter Topic</button>
           <button
             onClick={handleToggleSave}
             disabled={!user || isSaving}
