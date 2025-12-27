@@ -33,7 +33,7 @@ const SinglePostPage: React.FC = () => {
                 JOIN users u ON p.user_id = u.id
                 WHERE p.id = ?
             `;
-            const result = await execute(query, [user?.id || 'anon', id]);
+            const result = await execute(query, [user?.uid || 'anon', id]);
 
             if (result.length === 0) {
                 setLoading(false);
@@ -94,10 +94,10 @@ const SinglePostPage: React.FC = () => {
         if (!post || !user) return;
         try {
             if (post.is_liked_by_user) {
-                await execute('DELETE FROM likes WHERE post_id = ? AND user_id = ?', [post.id, user.id]);
+                await execute('DELETE FROM likes WHERE post_id = ? AND user_id = ?', [post.id, user.uid]);
                 setPost(prev => prev ? ({ ...prev, like_count: prev.like_count - 1, is_liked_by_user: false }) : null);
             } else {
-                await execute('INSERT INTO likes (post_id, user_id) VALUES (?, ?)', [post.id, user.id]);
+                await execute('INSERT INTO likes (post_id, user_id) VALUES (?, ?)', [post.id, user.uid]);
                 setPost(prev => prev ? ({ ...prev, like_count: prev.like_count + 1, is_liked_by_user: true }) : null);
             }
         } catch (error) {
@@ -110,7 +110,7 @@ const SinglePostPage: React.FC = () => {
         try {
             await execute(
                 'INSERT INTO comments (post_id, user_id, content, parent_id) VALUES (?, ?, ?, ?)',
-                [post.id, user.id, content, parentId || null]
+                [post.id, user.uid, content, parentId || null]
             );
             fetchPost(); // Reload to show new comment
         } catch (error) {
@@ -164,7 +164,7 @@ const SinglePostPage: React.FC = () => {
                     onDelete={handleDelete}
                     onComment={handleComment}
                     onDeleteComment={handleDeleteComment}
-                    currentUserId={user?.id}
+                    currentUserId={user?.uid}
                     onUserClick={() => { }} // No-op on single page or redirect to profile
                 />
             </div>
