@@ -58,7 +58,39 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
     const loadCommunities = async () => {
         setLoading(true);
         const data = await fetchCommunities();
-        setCommunities(data);
+
+        // Frontend Deduping (Self-Healing UI)
+        // Hides "Sci" if "Science" exists. Hides "Comp sci" if "Computer Science" exists.
+        // Logic: Sort by length DESC. Keep canonicals. Discard shadows.
+        const sorted = [...data].sort((a, b) => b.name.length - a.name.length);
+        const canonicals: Community[] = [];
+
+        for (const candidate of sorted) {
+            const lowName = candidate.name.toLowerCase();
+            // Check if this candidate is a "shadow" of an already accepted canonical
+            // Shadow = Prefix Match OR Acronym Match
+            const isShadow = canonicals.some(canonical => {
+                const canonName = canonical.name.toLowerCase();
+                // 1. Prefix Check
+                if (canonName.startsWith(lowName)) return true;
+                // 2. Acronym Check
+                const canonParts = canonName.split(/\s+/);
+                const candParts = lowName.split(/\s+/);
+                if (candParts.length > 1 && candParts.every((p, i) => canonParts[i]?.startsWith(p))) return true;
+
+                return false;
+            });
+
+            if (!isShadow) {
+                canonicals.push(candidate);
+            }
+        }
+
+        // Re-sort alphabetically (optional, but good for UX) or keep creation order?
+        // Let's sort alphabetically for clean sidebar
+        canonicals.sort((a, b) => a.name.localeCompare(b.name));
+
+        setCommunities(canonicals);
         setLoading(false);
     };
 
