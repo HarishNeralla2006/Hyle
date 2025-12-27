@@ -169,13 +169,13 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={onToggleLike}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-95 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500 ring-1 ring-pink-500/20' : 'hover:bg-pink-500/10 text-white/70 hover:text-pink-400'}`}
+                                className={`flex flex-row items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-95 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500 ring-1 ring-pink-500/20' : 'hover:bg-pink-500/10 text-white/70 hover:text-pink-400'}`}
                             >
-                                <div className="relative">
+                                <div className="relative flex items-center justify-center">
                                     <HeartIcon strokeWidth={2.5} className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100 group-hover/like:scale-110'}`} />
                                     {post.is_liked_by_user && <div className="absolute inset-0 bg-pink-500/20 blur-md rounded-full animate-pulse"></div>}
                                 </div>
-                                <span className="text-sm font-semibold min-w-[1ch] text-center">{post.like_count || 0}</span>
+                                <span className="text-sm font-semibold tabular-nums leading-none">{post.like_count || 0}</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(!showComments)}
@@ -185,8 +185,23 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                                 <span className="text-sm font-semibold">{post.comment_count > 0 ? post.comment_count : 'Comment'}</span>
                             </button>
                         </div>
-                        <button className="p-2 text-slate-500 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                            <GlobeIcon className="w-5 h-5" />
+                        <button
+                            onClick={() => {
+                                const url = `${window.location.origin}/post/${post.id}`;
+                                navigator.clipboard.writeText(url);
+                                // Fallback toast or visual feedback could be added here
+                                // For now we'll just animate the button
+                                const btn = document.getElementById(`share-${post.id}`);
+                                if (btn) {
+                                    btn.classList.add('text-green-400', 'scale-110');
+                                    setTimeout(() => btn.classList.remove('text-green-400', 'scale-110'), 1000);
+                                }
+                            }}
+                            id={`share-${post.id}`}
+                            className="p-2 text-slate-500 hover:text-white transition-all duration-300 rounded-full hover:bg-white/5 active:scale-90"
+                            title="Copy Link"
+                        >
+                            <SendIcon className="w-5 h-5 -rotate-45 translate-x-px -translate-y-px" />
                         </button>
                     </div>
                 </div>
