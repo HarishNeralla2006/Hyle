@@ -30,7 +30,7 @@ const SinglePostPage: React.FC = () => {
                     (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count,
                     EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked_by_user
                 FROM posts p
-                JOIN users u ON p.user_id = u.id
+                LEFT JOIN profiles u ON p.user_id = u.id
                 WHERE p.id = ?
             `;
             const result = await execute(query, [user?.uid || 'anon', id]);
@@ -49,7 +49,7 @@ const SinglePostPage: React.FC = () => {
                     u.username,
                     u.photoURL
                 FROM comments c
-                JOIN users u ON c.user_id = u.id
+                LEFT JOIN profiles u ON c.user_id = u.id
                 WHERE c.post_id = ?
                 ORDER BY c.created_at DESC
             `;
