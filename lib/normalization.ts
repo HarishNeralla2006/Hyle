@@ -24,7 +24,7 @@ export const SYNONYM_MAP: Record<string, string> = {
 
 // 2. Levenshtein Distance (Fuzzy Matcher) - No external dependencies
 export function levenshteinDistance(a: string, b: string): number {
-    const matrix = [];
+    const matrix: number[][] = [];
     for (let i = 0; i <= b.length; i++) matrix[i] = [i];
     for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
 

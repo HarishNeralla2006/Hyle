@@ -323,7 +323,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             {/* Combined Scene using Single WebGL Context */}
             <div className="absolute inset-0 z-0">
                 <Canvas
-                    eventSource={containerRef}
+                    eventSource={containerRef as any}
                     dpr={[1, 2]}
                     gl={{
                         antialias: true,
