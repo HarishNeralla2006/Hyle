@@ -169,16 +169,19 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={onToggleLike}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-90 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500' : 'hover:bg-white/5 text-slate-400 hover:text-pink-400'}`}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-95 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500 ring-1 ring-pink-500/20' : 'hover:bg-pink-500/10 text-slate-400 hover:text-pink-400'}`}
                             >
-                                <HeartIcon className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100'}`} />
+                                <div className="relative">
+                                    <HeartIcon className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100 group-hover/like:scale-110'}`} />
+                                    {post.is_liked_by_user && <div className="absolute inset-0 bg-pink-500/20 blur-md rounded-full animate-pulse"></div>}
+                                </div>
                                 <span className="text-sm font-semibold">{post.like_count > 0 ? post.like_count : 'Like'}</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(!showComments)}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/comment active:scale-90 ${showComments ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-white/5 text-slate-400 hover:text-indigo-400'}`}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/comment active:scale-95 ${showComments ? 'bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/20' : 'hover:bg-indigo-500/10 text-slate-400 hover:text-indigo-400'}`}
                             >
-                                <CommentIcon className="w-5 h-5 transition-transform group-active/comment:scale-125" />
+                                <CommentIcon className="w-5 h-5 transition-transform group-active/comment:scale-125 group-hover/comment:scale-110" />
                                 <span className="text-sm font-semibold">{post.comment_count > 0 ? post.comment_count : 'Comment'}</span>
                             </button>
                         </div>
@@ -549,13 +552,16 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                         className="w-full flex items-center justify-center overflow-hidden transition-all duration-200 ease-out -mt-4 md:mt-0"
                     >
                         {isRefreshing ? (
-                            <div className="flex flex-col items-center py-2">
+                            <div className="flex flex-col items-center py-2 scale-110 transition-transform">
                                 <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
                             </div>
                         ) : (
-                            <div className={`transform transition-transform duration-300 ${pullChange > 70 ? 'rotate-180' : ''}`}>
-                                <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            <div
+                                className={`transform transition-transform duration-300 ${pullChange > 70 ? 'rotate-180 text-indigo-400' : 'text-slate-500'}`}
+                                style={{ transform: `rotate(${pullChange > 70 ? 180 : 0}deg) scale(${Math.min(pullChange / 50, 1.2)})` }}
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                                 </svg>
                             </div>
                         )}

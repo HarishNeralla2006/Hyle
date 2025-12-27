@@ -172,6 +172,34 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
     setCurrentImageIndex(prev => (prev - 1 + userImages.length) % userImages.length);
   };
 
+  // Swipe Logic
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    if (slideInterval.current) clearInterval(slideInterval.current);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      setCurrentImageIndex(prev => (prev + 1) % userImages.length);
+    }
+    if (isRightSwipe) {
+      setCurrentImageIndex(prev => (prev - 1 + userImages.length) % userImages.length);
+    }
+  };
+
   if (!domain) return null;
 
   const handleToggleSave = async () => {
@@ -221,7 +249,12 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           </button>
         </div>
 
-        <div className="aspect-video bg-black/40 rounded-2xl flex items-center justify-center mb-6 border border-white/10 shadow-inner overflow-hidden relative group">
+        <div
+          className="aspect-video bg-black/40 rounded-2xl flex items-center justify-center mb-6 border border-white/10 shadow-inner overflow-hidden relative group touch-pan-y"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {(isCheckingImages || !imageLoaded) && (
             <div className="absolute inset-0 flex items-center justify-center z-20">
               <span className="text-5xl opacity-50 filter drop-shadow-lg animate-pulse">✨</span>
@@ -254,13 +287,19 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
                 onClick={nextImage}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors backdrop-blur-md border border-white/10 z-10"
               >
-                <ChevronRightIcon className="w-5 h-5" />
+                <ChevronLeftIcon className="w-5 h-5 rotate-180" />
               </button>
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
+
+              {/* Dots Indicator */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
                 {userImages.map((_, idx) => (
-                  <div
+                  <button
                     key={idx}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white scale-125' : 'bg-white/40'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(idx);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'}`}
                   />
                 ))}
               </div>
@@ -270,7 +309,6 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           {/* Subtle overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none"></div>
         </div>
-
         <div className="text-[var(--text-color)] text-[15px] mb-8 min-h-[5rem] max-h-48 overflow-y-auto transition-opacity duration-300 whitespace-pre-wrap leading-relaxed description-scrollbar pr-2 font-light">
           {isLoading && (
             <div className="flex items-center space-x-2 h-full justify-center opacity-60">
@@ -330,7 +368,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
             {isSaved ? 'Saved' : 'Save'}
           </button>
         </div>
-      </div>
+      </div >
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .description-scrollbar::-webkit-scrollbar {
@@ -347,7 +385,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           background: rgba(255, 255, 255, 0.2);
         }
       `}</style>
-    </div>
+    </div >
   );
 };
 
