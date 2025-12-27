@@ -1,5 +1,84 @@
+import React, { useState, useEffect, useCallback } from 'react';
 import FeedSkeleton from './FeedSkeleton';
-// ... existing imports
+import { execute } from '../lib/tidbClient';
+import { useAuth } from '../contexts/AuthContext';
+import { PostWithAuthorAndLikes, ViewState, ViewType, Comment } from '../types';
+import { useStatus } from '../contexts/StatusContext';
+import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons';
+import PostView from './PostView';
+import { RichTextRenderer } from './RichTextRenderer';
+import CommunitySidebar from './CommunitySidebar';
+import { fetchCommunities, joinCommunity, leaveCommunity, checkMembership, getMemberCount, Community } from '../lib/communities';
+import TopicSelector from './TopicSelector';
+import { normalizeSubTopic } from '../lib/normalization';
+
+// Helper to organize comments into threads
+const organizeComments = (comments: Comment[]) => {
+    const map = new Map<string, Comment & { replies: Comment[] }>();
+    const roots: (Comment & { replies: Comment[] })[] = [];
+
+    // First pass: create nodes
+    comments.forEach(c => {
+        map.set(c.id, { ...c, replies: [] });
+    });
+
+    // Second pass: link children
+    comments.forEach(c => {
+        const node = map.get(c.id)!;
+        if (c.parent_id && map.has(c.parent_id)) {
+            map.get(c.parent_id)!.replies.push(node);
+        } else {
+            roots.push(node);
+        }
+    });
+
+    return roots;
+};
+
+const CommentCard: React.FC<{ comment: Comment & { replies?: Comment[] }, onDelete: () => void, onReply: (id: string, username: string) => void, onDeleteComment: (id: string) => void, currentUserId: string | undefined, depth?: number }> = ({ comment, onDelete, onReply, onDeleteComment, currentUserId, depth = 0 }) => {
+    const isOwner = comment.user_id === currentUserId;
+    return (
+        <div className={`transition-colors group animate-fade-in-right ${depth > 0 ? 'ml-3 md:ml-6 border-l-2 border-white/5 pl-3 md:pl-4' : 'border-t border-white/5 pt-4'}`}>
+            <div className="flex justify-between items-start mb-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="font-bold text-xs text-indigo-300 tracking-wide font-mono">{comment.profiles.username}</span>
+                    <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">:: {new Date(comment.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                    <button onClick={() => onReply(comment.id, comment.profiles.username)} className="text-[10px] text-slate-500 hover:text-indigo-400 transition-colors uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100 flex items-center gap-1">
+                        <span>Reply</span>
+                    </button>
+                    {isOwner && (
+                        <button onClick={onDelete} className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                            <TrashIcon className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3 text-slate-200 text-sm leading-relaxed mb-2 border border-white/5 relative">
+                {/* Subtle tip indicator */}
+                <div className="absolute top-0 left-4 -mt-1 w-2 h-2 bg-[#2a2a30] rotate-45 border-t border-l border-white/5"></div>
+                {comment.content}
+            </div>
+            {/* Recursive Replies */}
+            {comment.replies && comment.replies.length > 0 && (
+                <div className="space-y-3 mt-3">
+                    {comment.replies.map(reply => (
+                        <CommentCard
+                            key={reply.id}
+                            comment={reply}
+                            onDelete={() => onDeleteComment(reply.id)}
+                            onReply={onReply}
+                            onDeleteComment={onDeleteComment}
+                            currentUserId={currentUserId}
+                            depth={depth + 1}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 // ... PostCard Component Definition
 const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => void; onDelete: () => void; onComment: (content: string, parentId?: string) => Promise<void>; onDeleteComment: (commentId: string) => Promise<void>; currentUserId: string | undefined; onUserClick: (uid: string) => void; }> = ({ post, onToggleLike, onDelete, onComment, onDeleteComment, currentUserId, onUserClick }) => {
@@ -163,47 +242,6 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
         </div>
     );
 };
-
-// ... inside FeedView 
-// Replace the loading block:
-
-{
-    loading ? (
-        <FeedSkeleton />
-    ) : error ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <p className="text-red-400 font-bold mb-2">Signal Lost</p>
-            <p className="text-slate-500 text-sm mb-4">{error}</p>
-            <button onClick={fetchFeed} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white text-xs font-bold uppercase tracking-wider">Retry Connection</button>
-        </div>
-    ) : posts.length === 0 ? (
-        <div className="text-center py-20 px-6">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
-                <span className="text-2xl opacity-50">📡</span>
-            </div>
-            <h3 className="text-white font-bold mb-2 text-lg">No signals detected</h3>
-            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">This frequency is quiet.</p>
-            <button onClick={() => setIsSidebarOpen(true)} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-colors">
-                Explore Frequencies
-            </button>
-        </div>
-    ) : (
-        posts.map(post => (
-            <div key={post.id} className="snap-start mb-6">
-                <PostCard
-                    post={post}
-                    onToggleLike={() => handleToggleLike(post)}
-                    onDelete={() => handleDeletePost(post.id)}
-                    // ... rest of props
-                    onComment={(content, parentId) => handleCreateComment(post.id, content, parentId)}
-                    onDeleteComment={(cid) => handleDeleteComment(post.id, cid)}
-                    currentUserId={user?.uid}
-                    onUserClick={(uid) => onViewChange({ type: ViewType.Profile, userId: uid })}
-                />
-            </div>
-        ))
-    )
-}
 
 const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onViewChange }) => {
     const { user } = useAuth();
@@ -624,10 +662,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     </div>
 
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-xs text-indigo-400 animate-pulse font-mono tracking-widest">RECEIVING SIGNAL...</p>
-                        </div>
+                        <FeedSkeleton />
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center px-4">
                             <p className="text-red-400 font-bold mb-2">Signal Lost</p>
