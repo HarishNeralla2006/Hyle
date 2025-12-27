@@ -1,4 +1,5 @@
 import { execute } from './tidbClient';
+import { generateEmbedding, cosineSimilarity } from './vector';
 
 export interface Community {
     id: string;
@@ -78,6 +79,37 @@ export const getMemberCount = async (communityId: string) => {
 
 export const createCommunity = async (name: string, description: string, tags: string[], creatorId: string): Promise<Community | null> => {
     try {
+        // 1. Semantic Check: Does a similar community already exist?
+        // Note: For scale, this should use a Vector DB index. 
+        // For now (prototype), we fetch all and check in-memory.
+        const existingCommunities = await fetchCommunities();
+
+        if (existingCommunities.length > 0) {
+            const currentEmbedding = await generateEmbedding(`${name} ${description} ${tags.join(' ')}`);
+
+            let bestMatch: Community | null = null;
+            let bestScore = -1;
+
+            for (const comm of existingCommunities) {
+                // Generate embedding for existing community on-the-fly (caching would be better)
+                // We use name + description + tags for rich context
+                const commText = `${comm.name} ${comm.description} ${comm.tags.join(' ')}`;
+                const commEmbedding = await generateEmbedding(commText);
+
+                const score = cosineSimilarity(currentEmbedding, commEmbedding);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = comm;
+                }
+            }
+
+            // Semantic Threshold (0.85 is usually a "good" same-topic match)
+            if (bestMatch && bestScore > 0.85) {
+                console.log(`Semantic Match Found: "${name}" -> "${bestMatch.name}" (Score: ${bestScore.toFixed(2)})`);
+                return bestMatch;
+            }
+        }
+
         // Simple ID generation: name-slug
         const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const tagString = JSON.stringify(tags);
