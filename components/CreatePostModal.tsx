@@ -158,7 +158,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, doma
             onClose();
             if (!isEditing) {
                 setTimeout(() => {
-                    setCurrentView({ type: ViewType.Post, domainId: selectedDomain.id, domainName: selectedDomain.name, focusedPostId: isEditing ? initialPost?.id : undefined });
+                    setCurrentView({ type: ViewType.Post, domainId: selectedDomain.id, domainName: selectedDomain.name, focusedPostId: undefined });
                 }, 300);
             }
         } catch (err: any) {
