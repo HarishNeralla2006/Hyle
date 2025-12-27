@@ -63,7 +63,7 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
         // HARD Fix for Ghost Buckets reported by User
         // These IDs are "broken" duplicates that should never be shown.
         // We force-remove them from the UI.
-        const BLACKLIST_IDS = ['sci', 'comp-sci', 'comp-science', 'compmuter-science'];
+        const BLACKLIST_IDS = ['sci', 'comp-sci', 'comp-science', 'compmuter-science', 'maths', 'math'];
 
         // 1. Filter Blacklist
         let filtered = data.filter(c => !BLACKLIST_IDS.includes(c.id));

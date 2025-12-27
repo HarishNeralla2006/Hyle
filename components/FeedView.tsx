@@ -264,7 +264,9 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                 'science-1': 'science', // common duplicate pattern
                 'comp-sci': 'computer-science',
                 'comp-science': 'computer-science',
-                'compmuter-science': 'computer-science'
+                'compmuter-science': 'computer-science',
+                'maths': 'mathematics',
+                'math': 'mathematics'
             };
 
             const targetId = REDIRECT_MAP[activeCommunity.id];
