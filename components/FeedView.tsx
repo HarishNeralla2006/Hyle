@@ -1,88 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { execute } from '../lib/tidbClient';
-import { useAuth } from '../contexts/AuthContext';
-import { PostWithAuthorAndLikes, ViewState, ViewType, Comment } from '../types';
-import { useStatus } from '../contexts/StatusContext';
-import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons';
-import PostView from './PostView';
-import { RichTextRenderer } from './RichTextRenderer';
-import CommunitySidebar from './CommunitySidebar';
-import { fetchCommunities, joinCommunity, leaveCommunity, checkMembership, getMemberCount, Community } from '../lib/communities';
-import TopicSelector from './TopicSelector';
-import { normalizeSubTopic } from '../lib/normalization';
+import FeedSkeleton from './FeedSkeleton';
+// ... existing imports
 
-// ... (existing imports)
-
-
-
-// Helper to organize comments into threads
-const organizeComments = (comments: Comment[]) => {
-    const map = new Map<string, Comment & { replies: Comment[] }>();
-    const roots: (Comment & { replies: Comment[] })[] = [];
-
-    // First pass: create nodes
-    comments.forEach(c => {
-        map.set(c.id, { ...c, replies: [] });
-    });
-
-    // Second pass: link children
-    comments.forEach(c => {
-        const node = map.get(c.id)!;
-        if (c.parent_id && map.has(c.parent_id)) {
-            map.get(c.parent_id)!.replies.push(node);
-        } else {
-            roots.push(node);
-        }
-    });
-
-    return roots;
-};
-
-const CommentCard: React.FC<{ comment: Comment & { replies?: Comment[] }, onDelete: () => void, onReply: (id: string, username: string) => void, onDeleteComment: (id: string) => void, currentUserId: string | undefined, depth?: number }> = ({ comment, onDelete, onReply, onDeleteComment, currentUserId, depth = 0 }) => {
-    const isOwner = comment.user_id === currentUserId;
-    return (
-        <div className={`transition-colors group animate-fade-in-right ${depth > 0 ? 'ml-3 md:ml-6 border-l-2 border-white/5 pl-3 md:pl-4' : 'border-t border-white/5 pt-4'}`}>
-            <div className="flex justify-between items-start mb-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="font-bold text-xs text-indigo-300 tracking-wide font-mono">{comment.profiles.username}</span>
-                    <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">:: {new Date(comment.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <button onClick={() => onReply(comment.id, comment.profiles.username)} className="text-[10px] text-slate-500 hover:text-indigo-400 transition-colors uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100 flex items-center gap-1">
-                        <span>Reply</span>
-                    </button>
-                    {isOwner && (
-                        <button onClick={onDelete} className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                            <TrashIcon className="w-3.5 h-3.5" />
-                        </button>
-                    )}
-                </div>
-            </div>
-            <div className="bg-white/5 rounded-lg p-3 text-slate-200 text-sm leading-relaxed mb-2 border border-white/5 relative">
-                {/* Subtle tip indicator */}
-                <div className="absolute top-0 left-4 -mt-1 w-2 h-2 bg-[#2a2a30] rotate-45 border-t border-l border-white/5"></div>
-                {comment.content}
-            </div>
-            {/* Recursive Replies */}
-            {comment.replies && comment.replies.length > 0 && (
-                <div className="space-y-3 mt-3">
-                    {comment.replies.map(reply => (
-                        <CommentCard
-                            key={reply.id}
-                            comment={reply}
-                            onDelete={() => onDeleteComment(reply.id)}
-                            onReply={onReply}
-                            onDeleteComment={onDeleteComment}
-                            currentUserId={currentUserId}
-                            depth={depth + 1}
-                        />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
+// ... PostCard Component Definition
 const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => void; onDelete: () => void; onComment: (content: string, parentId?: string) => Promise<void>; onDeleteComment: (commentId: string) => Promise<void>; currentUserId: string | undefined; onUserClick: (uid: string) => void; }> = ({ post, onToggleLike, onDelete, onComment, onDeleteComment, currentUserId, onUserClick }) => {
     const isOwner = post.user_id === currentUserId;
     const [commentContent, setCommentContent] = useState('');
@@ -135,17 +54,31 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         )}
                     </div>
 
-                    {/* Post Image */}
+                    {/* Premium Post Image (Smart Letterboxing) */}
                     {post.imageURL && (
-                        <div className="mb-4 rounded-xl overflow-hidden shadow-lg border border-white/5">
-                            <img
-                                src={post.imageURL}
-                                alt="Transmission visual"
-                                className="w-full h-auto object-cover max-h-[500px]"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                            />
+                        <div className="mb-6 rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative bg-black h-96 group/image">
+                            {/* Blurred Background Layer (Fill) */}
+                            <div className="absolute inset-0">
+                                <img
+                                    src={post.imageURL}
+                                    alt="Background"
+                                    className="w-full h-full object-cover blur-2xl opacity-50 scale-110"
+                                />
+                                <div className="absolute inset-0 bg-black/20"></div>
+                            </div>
+
+                            {/* Main Content Layer (Contain) */}
+                            <div className="absolute inset-0 flex items-center justify-center p-2">
+                                <img
+                                    src={post.imageURL}
+                                    alt="Transmission visual"
+                                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-lg relative z-10 transition-transform duration-500 group-hover/image:scale-[1.02]"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).parentElement!.parentElement!.style.display = 'none';
+                                    }}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -157,26 +90,26 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={onToggleLike}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500' : 'hover:bg-white/5 text-slate-400 hover:text-pink-400'}`}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-90 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500' : 'hover:bg-white/5 text-slate-400 hover:text-pink-400'}`}
                             >
-                                <HeartIcon className={`w-5 h-5 transition-transform group-active/like:scale-75 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                                <HeartIcon className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100'}`} />
                                 <span className="text-sm font-semibold">{post.like_count > 0 ? post.like_count : 'Like'}</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(!showComments)}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/comment ${showComments ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-white/5 text-slate-400 hover:text-indigo-400'}`}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/comment active:scale-90 ${showComments ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-white/5 text-slate-400 hover:text-indigo-400'}`}
                             >
-                                <CommentIcon className="w-5 h-5 transition-transform group-active/comment:scale-75" />
+                                <CommentIcon className="w-5 h-5 transition-transform group-active/comment:scale-125" />
                                 <span className="text-sm font-semibold">{post.comment_count > 0 ? post.comment_count : 'Comment'}</span>
                             </button>
                         </div>
                         <button className="p-2 text-slate-500 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                            <GlobeIcon className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
 
-                {/* Comments Section */}
+                {/* Comments Section (Unchanged logic, just ensure wrapper exists) */}
                 {showComments && (
                     <div className="bg-[#0a0a0f]/50 border-t border-white/5 p-4 md:p-6 animate-fade-in-up">
                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Transmission Log</h4>
@@ -230,6 +163,47 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
         </div>
     );
 };
+
+// ... inside FeedView 
+// Replace the loading block:
+
+{
+    loading ? (
+        <FeedSkeleton />
+    ) : error ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+            <p className="text-red-400 font-bold mb-2">Signal Lost</p>
+            <p className="text-slate-500 text-sm mb-4">{error}</p>
+            <button onClick={fetchFeed} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white text-xs font-bold uppercase tracking-wider">Retry Connection</button>
+        </div>
+    ) : posts.length === 0 ? (
+        <div className="text-center py-20 px-6">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                <span className="text-2xl opacity-50">📡</span>
+            </div>
+            <h3 className="text-white font-bold mb-2 text-lg">No signals detected</h3>
+            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">This frequency is quiet.</p>
+            <button onClick={() => setIsSidebarOpen(true)} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-colors">
+                Explore Frequencies
+            </button>
+        </div>
+    ) : (
+        posts.map(post => (
+            <div key={post.id} className="snap-start mb-6">
+                <PostCard
+                    post={post}
+                    onToggleLike={() => handleToggleLike(post)}
+                    onDelete={() => handleDeletePost(post.id)}
+                    // ... rest of props
+                    onComment={(content, parentId) => handleCreateComment(post.id, content, parentId)}
+                    onDeleteComment={(cid) => handleDeleteComment(post.id, cid)}
+                    currentUserId={user?.uid}
+                    onUserClick={(uid) => onViewChange({ type: ViewType.Profile, userId: uid })}
+                />
+            </div>
+        ))
+    )
+}
 
 const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onViewChange }) => {
     const { user } = useAuth();
