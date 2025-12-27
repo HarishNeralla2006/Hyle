@@ -13,6 +13,38 @@ export async function createCommunityAction(name: string, description: string, t
             const existingCommunities = await fetchCommunities();
 
             if (existingCommunities.length > 0) {
+                // A. MATH Logic (Deterministic, Fast, Free)
+                // ---------------------------------------------------------
+                // 1. Prefix Match ("Sci" -> "Science")
+                const lowName = name.toLowerCase().trim();
+                const prefixMatch = existingCommunities.find(c =>
+                    c.name.toLowerCase().startsWith(lowName) &&
+                    c.name.length > lowName.length // Ensure it's strictly a prefix, not equal
+                );
+
+                if (prefixMatch) {
+                    console.log(` [Server Action] Prefix Match: "${name}" -> "${prefixMatch.name}"`);
+                    return prefixMatch;
+                }
+
+                // 2. Acronym/Substring Heuristic (Simple "Comp Sci" -> "Computer Science")
+                // Check if all parts of input are prefixes of words in an existing community
+                const inputParts = lowName.split(' ');
+                if (inputParts.length > 1) {
+                    const acronymMatch = existingCommunities.find(c => {
+                        const targetParts = c.name.toLowerCase().split(' ');
+                        // Strict check: Input "Comp Sci" (2 parts) must match 2 parts in Target "Computer Science"
+                        return inputParts.every((part, i) => targetParts[i]?.startsWith(part));
+                    });
+
+                    if (acronymMatch) {
+                        console.log(` [Server Action] Acronym/Sub-word Match: "${name}" -> "${acronymMatch.name}"`);
+                        return acronymMatch;
+                    }
+                }
+
+                // B. AI Logic (Semantic Vectors)
+                // ---------------------------------------------------------
                 const currentEmbedding = await generateEmbedding(`${name} ${description} ${tags.join(' ')}`);
 
                 let bestMatch: Community | null = null;
