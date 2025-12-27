@@ -169,10 +169,10 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={onToggleLike}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-95 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500 ring-1 ring-pink-500/20' : 'hover:bg-pink-500/10 text-slate-400 hover:text-pink-400'}`}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-300 group/like active:scale-95 ${post.is_liked_by_user ? 'bg-pink-500/10 text-pink-500 ring-1 ring-pink-500/20' : 'hover:bg-pink-500/10 text-white/70 hover:text-pink-400'}`}
                             >
                                 <div className="relative">
-                                    <HeartIcon className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100 group-hover/like:scale-110'}`} />
+                                    <HeartIcon strokeWidth={2.5} className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100 group-hover/like:scale-110'}`} />
                                     {post.is_liked_by_user && <div className="absolute inset-0 bg-pink-500/20 blur-md rounded-full animate-pulse"></div>}
                                 </div>
                                 <span className="text-sm font-semibold">{post.like_count > 0 ? post.like_count : 'Like'}</span>
