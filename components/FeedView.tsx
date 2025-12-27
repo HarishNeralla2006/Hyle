@@ -186,15 +186,40 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                             </button>
                         </div>
                         <button
-                            onClick={() => {
+                            onClick={async () => {
                                 const url = `${window.location.origin}/post/${post.id}`;
-                                navigator.clipboard.writeText(url);
-                                // Fallback toast or visual feedback could be added here
-                                // For now we'll just animate the button
                                 const btn = document.getElementById(`share-${post.id}`);
+
+                                try {
+                                    await navigator.clipboard.writeText(url);
+                                } catch (err) {
+                                    console.error('Clipboard API failed', err);
+                                    // Fallback
+                                    const textArea = document.createElement("textarea");
+                                    textArea.value = url;
+                                    document.body.appendChild(textArea);
+                                    textArea.focus();
+                                    textArea.select();
+                                    try {
+                                        document.execCommand('copy');
+                                    } catch (err) {
+                                        console.error('Fallback copy failed', err);
+                                        return;
+                                    }
+                                    document.body.removeChild(textArea);
+                                }
+
+                                // Visual Feedback
                                 if (btn) {
                                     btn.classList.add('text-green-400', 'scale-110');
-                                    setTimeout(() => btn.classList.remove('text-green-400', 'scale-110'), 1000);
+                                    // Make icon change temporarily
+                                    const icon = btn.querySelector('svg');
+                                    if (icon) icon.style.stroke = "#4ade80"; // green-400
+
+                                    setTimeout(() => {
+                                        btn.classList.remove('text-green-400', 'scale-110');
+                                        if (icon) icon.style.stroke = "currentColor";
+                                    }, 1000);
                                 }
                             }}
                             id={`share-${post.id}`}
