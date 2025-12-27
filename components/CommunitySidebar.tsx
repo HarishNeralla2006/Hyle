@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { fetchCommunities, Community } from '../lib/communities';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,7 +14,7 @@ const CommunityLink: React.FC<LinkProps> = ({ community, isActive, onClick }) =>
     return (
         <button
             onClick={onClick}
-            className={`w - full group flex items - center p - 3 rounded - xl transition - all duration - 300 relative overflow - hidden ${isActive ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5 border border-transparent hover:border-white/5'
+            className={`w-full group flex items-center p-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5 border border-transparent hover:border-white/5'
                 } `}
         >
             {/* Active Glow */}
@@ -21,12 +22,12 @@ const CommunityLink: React.FC<LinkProps> = ({ community, isActive, onClick }) =>
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--primary-accent)] shadow-[0_0_15px_var(--primary-accent)]"></div>
             )}
 
-            <div className={`mr - 4 p - 2 rounded - lg transition - colors ${isActive ? 'bg-white/10 text-[var(--primary-accent)]' : 'bg-white/5 text-slate-400 group-hover:text-white'} `}>
+            <div className={`mr-4 p-2 rounded-lg transition-colors ${isActive ? 'bg-white/10 text-[var(--primary-accent)]' : 'bg-white/5 text-slate-400 group-hover:text-white'} `}>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             </div>
 
             <div className="flex-1 text-left">
-                <h3 className={`font - bold text - sm tracking - wide transition - colors ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'} `}>
+                <h3 className={`font-bold text-sm tracking-wide transition-colors ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'} `}>
                     {community.name}
                 </h3>
                 <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider truncate max-w-[160px]">
@@ -59,10 +60,18 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
         setLoading(true);
         const data = await fetchCommunities();
 
-        // Frontend Deduping (Self-Healing UI)
+        // HARD Fix for Ghost Buckets reported by User
+        // These IDs are "broken" duplicates that should never be shown.
+        // We force-remove them from the UI.
+        const BLACKLIST_IDS = ['sci', 'comp-sci', 'comp-science', 'compmuter-science'];
+
+        // 1. Filter Blacklist
+        let filtered = data.filter(c => !BLACKLIST_IDS.includes(c.id));
+
+        // 2. Frontend Deduping (Self-Healing UI)
         // Hides "Sci" if "Science" exists. Hides "Comp sci" if "Computer Science" exists.
         // Logic: Sort by length DESC. Keep canonicals. Discard shadows.
-        const sorted = [...data].sort((a, b) => b.name.length - a.name.length);
+        const sorted = [...filtered].sort((a, b) => b.name.length - a.name.length);
         const canonicals: Community[] = [];
 
         for (const candidate of sorted) {
@@ -86,8 +95,7 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
             }
         }
 
-        // Re-sort alphabetically (optional, but good for UX) or keep creation order?
-        // Let's sort alphabetically for clean sidebar
+        // Re-sort alphabetically for clean sidebar
         canonicals.sort((a, b) => a.name.localeCompare(b.name));
 
         setCommunities(canonicals);
@@ -100,7 +108,6 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
         }
     }, [isOpen]);
 
-    // ... (in component)
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !newName || !newTags) return;
