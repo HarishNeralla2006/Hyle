@@ -1,0 +1,65 @@
+'use server';
+
+import { generateEmbedding, cosineSimilarity } from '../lib/vector';
+import { fetchCommunities, Community } from '../lib/communities';
+import { execute } from '../lib/tidbClient';
+
+export async function createCommunityAction(name: string, description: string, tags: string[], creatorId: string): Promise<Community | null> {
+    try {
+        console.log(" [Server Action] Creating community:", name);
+
+        // 1. Semantic Check (Runs on Server - Safe & Fast)
+        try {
+            const existingCommunities = await fetchCommunities();
+
+            if (existingCommunities.length > 0) {
+                const currentEmbedding = await generateEmbedding(`${name} ${description} ${tags.join(' ')}`);
+
+                let bestMatch: Community | null = null;
+                let bestScore = -1;
+
+                for (const comm of existingCommunities) {
+                    const commText = `${comm.name} ${comm.description} ${comm.tags.join(' ')}`;
+                    const commEmbedding = await generateEmbedding(commText);
+
+                    const score = cosineSimilarity(currentEmbedding, commEmbedding);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMatch = comm;
+                    }
+                }
+
+                if (bestMatch && bestScore > 0.85) {
+                    console.log(` [Server Action] Semantic Match Found: "${name}" -> "${bestMatch.name}" (Score: ${bestScore.toFixed(2)})`);
+                    return bestMatch; // Return existing instead of creating new
+                }
+            }
+        } catch (semanticError) {
+            console.error(" [Server Action] Semantic check failed:", semanticError);
+            // Continue to creation if vector check fails
+        }
+
+        // 2. Database Insertion (Standard)
+        const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const tagString = JSON.stringify(tags);
+        const themeColor = '#FFD820';
+
+        await execute(
+            `INSERT INTO communities (id, name, description, tags, theme_color, creator_id) VALUES (?, ?, ?, ?, ?, ?)`,
+            [id, name, description, tagString, themeColor, creatorId]
+        );
+
+        return {
+            id,
+            name,
+            description,
+            tags,
+            themeColor,
+            creator_id: creatorId
+        };
+
+    } catch (error) {
+        console.error(" [Server Action] Failed to create community:", error);
+        return null;
+    }
+}

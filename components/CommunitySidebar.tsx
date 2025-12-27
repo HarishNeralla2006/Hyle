@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { fetchCommunities, createCommunity, Community } from '../lib/communities';
+import { fetchCommunities, Community } from '../lib/communities';
 import { useAuth } from '../contexts/AuthContext';
+import { createCommunityAction } from '../app/actions';
 
 interface LinkProps {
     community: Community;
@@ -67,17 +68,21 @@ const CommunitySidebar: React.FC<SidebarProps> = ({ activeId, onSelect, isOpen, 
         }
     }, [isOpen]);
 
+    // ... (in component)
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !newName || !newTags) return;
 
         const tagsArray = newTags.split(',').map(t => t.trim().replace(/^#/, ''));
-        const success = await createCommunity(newName, newDesc, tagsArray, user.uid);
+        // Use Server Action
+        const successCommunity = await createCommunityAction(newName, newDesc, tagsArray, user.uid);
 
-        if (success) {
+        if (successCommunity) {
             setNewName(''); setNewDesc(''); setNewTags('');
             setIsCreating(false);
             loadCommunities();
+            // Optional: Auto-select the returned community (whether new or semantic match)
+            onSelect(successCommunity);
         }
     };
 
