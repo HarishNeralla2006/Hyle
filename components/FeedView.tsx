@@ -252,8 +252,33 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
 
     useEffect(() => {
         if (activeCommunity && user) {
+            // Check Membership
             checkMembership(activeCommunity.id, user.uid).then(setIsMember);
             getMemberCount(activeCommunity.id).then(setMemberCount);
+
+            // SELF-HEALING REDIRECT:
+            // If user somehow navigated to a "Ghost Bucket" (e.g. via old link or history),
+            // we force a redirect to the Canonical version.
+            const REDIRECT_MAP: { [key: string]: string } = {
+                'sci': 'science',
+                'science-1': 'science', // common duplicate pattern
+                'comp-sci': 'computer-science',
+                'comp-science': 'computer-science',
+                'compmuter-science': 'computer-science'
+            };
+
+            const targetId = REDIRECT_MAP[activeCommunity.id];
+            if (targetId) {
+                console.log(`[FeedView] Detected Ghost Bucket "${activeCommunity.id}". Redirecting to "${targetId}"...`);
+                // Fetch to find the real object
+                fetchCommunities().then(all => {
+                    const target = all.find(c => c.id === targetId);
+                    if (target) {
+                        setActiveCommunity(target);
+                    }
+                });
+            }
+
         } else {
             setIsMember(false);
             setMemberCount(0);
