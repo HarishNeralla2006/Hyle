@@ -4,7 +4,7 @@ import { execute } from '../lib/tidbClient';
 import { useAuth } from '../contexts/AuthContext';
 import { PostWithAuthorAndLikes, ViewState, ViewType, Comment } from '../types';
 import { useStatus } from '../contexts/StatusContext';
-import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon } from './icons';
+import { HeartIcon, TrashIcon, BackIcon, CommentIcon, GlobeIcon, SendIcon } from './icons';
 import PostView from './PostView';
 import { RichTextRenderer } from './RichTextRenderer';
 import CommunitySidebar from './CommunitySidebar';
