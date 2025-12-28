@@ -107,48 +107,29 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
     return (
         <div className="flex flex-col items-center justify-start md:justify-center w-full min-h-screen p-6 animate-fade-in pt-12 pb-48">
             <div className="text-center mb-12 relative z-10">
-                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-4 font-['Inter'] drop-shadow-2xl">
-                    Select Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">Frequency</span>
+                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-3 font-['Inter']">
+                    Select Your Frequency
                 </h2>
-                <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto font-medium tracking-wide">
-                    Tune into the domains that resonate with your intellect.
+                <p className="text-slate-500 text-sm font-medium tracking-wide">
+                    Curate your feed.
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5 mb-12 w-full max-w-6xl relative z-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-12 w-full max-w-6xl relative z-10">
                 {sortedTopics.map((topic) => {
                     const isSelected = selectedTopics.includes(topic.id);
                     return (
                         <button
                             key={topic.id}
                             onClick={() => toggleTopic(topic.id)}
-                            className={`group relative p-6 rounded-3xl border transition-all duration-500 ease-out flex flex-col items-center justify-between overflow-hidden h-36 md:h-44 backdrop-blur-xl ${isSelected
-                                ? 'border-white/50 bg-white/10 scale-105 shadow-[0_0_50px_-10px_rgba(255,255,255,0.2)] ring-1 ring-white/30'
-                                : 'border-white/5 bg-black/20 hover:bg-white/5 hover:border-white/20 hover:scale-[1.03] hover:shadow-2xl'
+                            className={`group relative p-6 rounded-2xl border transition-all duration-200 flex flex-col items-center justify-center h-32 md:h-40 ${isSelected
+                                ? 'bg-white border-white text-black'
+                                : 'bg-transparent border-white/10 text-slate-400 hover:border-white/30 hover:text-white'
                                 }`}
                         >
-                            {/* Dynamic Glow Background */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${topic.color} transition-all duration-700 blur-[80px] opacity-0 ${isSelected ? 'opacity-30' : 'group-hover:opacity-20'}`} />
-
-                            {/* Animated Gradient Border Line */}
-                            <div className={`absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r ${topic.color} transition-all duration-500 ${isSelected ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-50 group-hover:opacity-50 group-hover:scale-x-75'}`} />
-
-                            <div className="relative z-10 flex flex-col items-center gap-2">
-                                <span className={`font-black tracking-tight text-xl md:text-2xl transition-colors duration-300 ${isSelected ? 'text-white drop-shadow-md' : 'text-slate-400 group-hover:text-white'}`}>
-                                    {topic.label}
-                                </span>
-                                {/* Smart Tag Count or Detail (Optional polish) */}
-                                <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 ${isSelected ? 'text-white/80' : 'text-slate-600 group-hover:text-slate-400'}`}>
-                                    {isSelected ? 'Active' : 'Sphere'}
-                                </span>
-                            </div>
-
-                            {/* Selection Indicator - Floating Orb */}
-                            <div className={`absolute top-4 right-4 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${isSelected ? 'scale-100 opacity-100 rotate-0' : 'scale-50 opacity-0 rotate-45'}`}>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-tr ${topic.color} shadow-lg ring-2 ring-black/10`}>
-                                    <CheckIcon className="w-4 h-4 text-white stroke-[3px]" />
-                                </div>
-                            </div>
+                            <span className={`font-bold tracking-tight text-lg md:text-xl ${isSelected ? 'text-black' : 'text-current'}`}>
+                                {topic.label}
+                            </span>
                         </button>
                     );
                 })}
@@ -159,19 +140,12 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
                 <button
                     onClick={handleSave}
                     disabled={selectedTopics.length === 0 || isSaving}
-                    className={`pointer-events-auto px-12 py-5 rounded-full font-black tracking-widest uppercase transition-all duration-500 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] border border-white/20 ${selectedTopics.length > 0 && !isSaving
-                        ? 'bg-white text-black hover:scale-105 hover:bg-slate-100 active:scale-95'
-                        : 'bg-black/80 text-slate-500 backdrop-blur-md border-white/5 cursor-not-allowed scale-95'
+                    className={`pointer-events-auto px-10 py-4 rounded-full font-bold tracking-wide transition-all duration-200 ${selectedTopics.length > 0 && !isSaving
+                        ? 'bg-white text-black hover:bg-slate-200'
+                        : 'bg-white/10 text-slate-500 cursor-not-allowed'
                         }`}
                 >
-                    {isSaving ? (
-                        <span className="flex items-center gap-3">
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-                            Synchronizing...
-                        </span>
-                    ) : (
-                        'Enter the Sphere'
-                    )}
+                    {isSaving ? 'Updating...' : 'Enter Sphere'}
                 </button>
             </div>
 
