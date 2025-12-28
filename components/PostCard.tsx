@@ -88,6 +88,7 @@ interface PostCardProps {
     onDeleteComment: (commentId: string) => Promise<void>;
     currentUserId: string | undefined;
     onUserClick: (uid: string) => void;
+    mode?: 'gallery' | 'discussion';
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -97,7 +98,8 @@ const PostCard: React.FC<PostCardProps> = ({
     onComment,
     onDeleteComment,
     currentUserId,
-    onUserClick
+    onUserClick,
+    mode = 'discussion'
 }) => {
     const isOwner = post.user_id === currentUserId;
     const [commentContent, setCommentContent] = useState('');
@@ -116,6 +118,40 @@ const PostCard: React.FC<PostCardProps> = ({
     };
 
     const threadedComments = React.useMemo(() => organizeComments(post.comments), [post.comments]);
+
+    if (mode === 'gallery') {
+        return (
+            <div className="relative group perspective-1000 mb-6 break-inside-avoid">
+                <div className="relative glass-panel rounded-2xl overflow-hidden border border-[var(--glass-border)] bg-[var(--glass-surface)] hover:-translate-y-1 transition-transform duration-300">
+                    <img src={post.imageURL} alt="Post" className="w-full h-auto object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                        <div className="flex items-center space-x-2 mb-2 cursor-pointer" onClick={() => onUserClick(post.user_id)}>
+                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden">
+                                {post.profiles.photoURL ? (
+                                    <img src={post.profiles.photoURL} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[10px] text-white font-bold max-w-full">{post.profiles.username?.[0]?.toUpperCase()}</div>
+                                )}
+                            </div>
+                            <span className="text-white text-xs font-bold shadow-black drop-shadow-md">{post.profiles.username}</span>
+                        </div>
+                        <p className="text-slate-200 text-xs line-clamp-2 mb-2">{post.content}</p>
+                        <div className="flex space-x-4">
+                            <button onClick={(e) => { e.stopPropagation(); onToggleLike(); }} className={`flex items-center space-x-1 text-xs ${post.is_liked_by_user ? 'text-pink-500' : 'text-slate-300'}`}>
+                                <HeartIcon className={`w-3 h-3 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                                <span className={Number(post.like_count) > 0 ? "" : "hidden"}>{post.like_count}</span>
+                            </button>
+                            {isOwner && (
+                                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="flex items-center space-x-1 text-xs text-slate-300 hover:text-[var(--primary-accent)] transition-colors">
+                                    <TrashIcon className="w-3 h-3" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative group perspective-1000 mb-8 w-full max-w-2xl mx-auto">
@@ -208,6 +244,20 @@ const PostCard: React.FC<PostCardProps> = ({
                             onClick={async () => {
                                 const url = `${window.location.origin}/post/${post.id}`;
                                 const btn = document.getElementById(`share-${post.id}`);
+
+                                if (navigator.share) {
+                                    try {
+                                        await navigator.share({
+                                            title: `Post by @${post.profiles.username}`,
+                                            text: post.content,
+                                            url: url
+                                        });
+                                        return; // Successfully shared natively
+                                    } catch (err) {
+                                        console.log('Error sharing:', err);
+                                        // Fallback if user cancelled or failed
+                                    }
+                                }
 
                                 try {
                                     await navigator.clipboard.writeText(url);

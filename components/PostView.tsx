@@ -7,6 +7,7 @@ import { useStatus } from '../contexts/StatusContext';
 import { HeartIcon, TrashIcon, BackIcon, CommentIcon, ReplyIcon, EditIcon } from './icons';
 import { RichTextRenderer } from './RichTextRenderer';
 import { normalizeSubTopic } from '../lib/normalization';
+import PostCard from './PostCard';
 
 
 interface PostViewProps {
@@ -18,195 +19,7 @@ interface PostViewProps {
     refreshKey?: number;
 }
 
-const CommentCard: React.FC<{ comment: Comment, onDelete: () => void, onReply: (username: string) => void, onUserClick: (uid: string) => void, currentUserId: string | undefined }> = ({ comment, onDelete, onReply, onUserClick, currentUserId }) => {
-    const isOwner = comment.user_id === currentUserId;
-    return (
-        <div className="py-3 border-l-2 border-white/5 pl-4 hover:border-[var(--primary-accent)]/50 transition-colors group animate-fade-in-right">
-            <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center space-x-2">
-                    <span onClick={() => onUserClick(comment.user_id)} className="font-bold text-xs text-[var(--primary-accent)] tracking-wide font-mono cursor-pointer hover:underline">{comment.profiles.username}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">:: {new Date(comment.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onReply(comment.profiles.username)} className="text-slate-600 hover:text-[var(--primary-accent)] transition-colors" title="Reply">
-                        <ReplyIcon className="w-3 h-3" />
-                    </button>
-                    {isOwner && (
-                        <button onClick={onDelete} className="text-slate-600 hover:text-red-400 transition-colors" title="Delete">
-                            <TrashIcon className="w-3 h-3" />
-                        </button>
-                    )}
-                </div>
-            </div>
-            <p className="text-slate-300 text-sm leading-relaxed">{comment.content}</p>
-        </div>
-    );
-};
 
-const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => void; onDelete: () => void; onEdit: () => void; onComment: (content: string) => Promise<void>; onDeleteComment: (commentId: string) => Promise<void>; currentUserId: string | undefined; onUserClick: (uid: string) => void; mode: 'gallery' | 'discussion' }> = ({ post, onToggleLike, onDelete, onEdit, onComment, onDeleteComment, currentUserId, onUserClick, mode }) => {
-    const isOwner = post.user_id === currentUserId;
-    const [commentContent, setCommentContent] = useState('');
-    const [isCommenting, setIsCommenting] = useState(false);
-    const [showComments, setShowComments] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const handleCommentSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!commentContent.trim()) return;
-        setIsCommenting(true);
-        await onComment(commentContent);
-        setCommentContent('');
-        setIsCommenting(false);
-    };
-
-    const handleReply = (username: string) => {
-        setCommentContent(`@${username} `);
-        inputRef.current?.focus();
-    };
-
-    if (mode === 'gallery') {
-        return (
-            <div className="relative group perspective-1000 mb-6 break-inside-avoid">
-                <div className="relative glass-panel rounded-2xl overflow-hidden border border-[var(--glass-border)] bg-[var(--glass-surface)] hover:-translate-y-1 transition-transform duration-300">
-                    <img src={post.imageURL} alt="Post" className="w-full h-auto object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                        <div className="flex items-center space-x-2 mb-2 cursor-pointer" onClick={() => onUserClick(post.user_id)}>
-                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden">
-                                {post.profiles.photoURL ? (
-                                    <img src={post.profiles.photoURL} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[10px] text-white font-bold">{post.profiles.username[0]}</div>
-                                )}
-                            </div>
-                            <span className="text-white text-xs font-bold shadow-black drop-shadow-md">{post.profiles.username}</span>
-                        </div>
-                        <p className="text-slate-200 text-xs line-clamp-2 mb-2">{post.content}</p>
-                        <div className="flex space-x-4">
-                            <button onClick={(e) => { e.stopPropagation(); onToggleLike(); }} className={`flex items-center space-x-1 text-xs ${post.is_liked_by_user ? 'text-pink-500' : 'text-slate-300'}`}>
-                                <HeartIcon className={`w-3 h-3 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
-                                <span>{post.like_count}</span>
-                            </button>
-                            {isOwner && (
-                                <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="flex items-center space-x-1 text-xs text-slate-300 hover:text-[var(--primary-accent)] transition-colors">
-                                    <EditIcon className="w-3 h-3" />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <div className="relative group perspective-1000 mb-6">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--primary-accent)] to-purple-600 rounded-[20px] blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
-            <div className="relative glass-panel rounded-[20px] p-0 overflow-hidden border border-[var(--glass-border)] bg-[var(--glass-surface)] transition-all duration-300 group-hover:-translate-y-1">
-                <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onUserClick(post.user_id)}>
-                            <div className="relative">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center text-white font-bold text-sm shadow-inner overflow-hidden">
-                                    {post.profiles.photoURL ? (
-                                        <img src={post.profiles.photoURL} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="relative z-10">{post.profiles.username.charAt(0).toUpperCase()}</span>
-                                    )}
-                                    {!post.profiles.photoURL && <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary-accent)]/20 to-transparent"></div>}
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-green-500 border-2 border-[#050508] rounded-full"></div>
-                            </div>
-                            <div>
-                                <p className="font-bold text-sm text-[var(--text-color)] tracking-wide hover:text-[var(--primary-accent)] transition-colors">{post.profiles.username}</p>
-                                <p className="text-[10px] text-[var(--primary-accent)] font-mono uppercase tracking-wider opacity-80">{new Date(post.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                            </div>
-                        </div>
-                        {isOwner && (
-                            <div className="flex items-center space-x-1">
-                                <button onClick={onEdit} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-[var(--primary-accent)] transition-colors opacity-50 group-hover:opacity-100">
-                                    <EditIcon className="w-4 h-4" />
-                                </button>
-                                <button onClick={onDelete} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-red-400 transition-colors opacity-50 group-hover:opacity-100">
-                                    <TrashIcon className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="pl-1 text-[var(--text-color)] leading-relaxed text-[15px] font-normal tracking-wide">
-                        <RichTextRenderer content={post.content} />
-                    </div>
-
-                    {post.imageURL && (
-                        <div className="mt-4 rounded-xl overflow-hidden border border-white/10 max-h-96 w-full">
-                            <img src={post.imageURL} alt="Post Attachment" className="w-full h-full object-cover" />
-                        </div>
-                    )}
-                </div>
-
-                <div className="px-6 py-3 bg-[var(--bg-color)]/20 border-t border-[var(--glass-border)] flex items-center space-x-6">
-                    <button onClick={onToggleLike} className={`group/btn flex items-center space-x-2 transition-all ${post.is_liked_by_user ? 'text-pink-500' : 'text-slate-400 hover:text-white'}`}>
-                        <div className={`p-1.5 rounded-full transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'group-hover/btn:bg-white/5'}`}>
-                            <HeartIcon className={`w-4 h-4 transition-transform group-active/btn:scale-125 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
-                        </div>
-                        <span className="font-mono text-xs font-bold">{Number(post.like_count) > 0 ? post.like_count : ''}</span>
-                    </button>
-
-                    <button onClick={() => setShowComments(!showComments)} className={`group/btn flex items-center space-x-2 transition-colors ${showComments ? 'text-[var(--primary-accent)]' : 'text-slate-400 hover:text-white'}`}>
-                        <div className={`p-1.5 rounded-full transition-colors ${showComments ? 'bg-[var(--primary-accent)]/10' : 'group-hover/btn:bg-white/5'}`}>
-                            <CommentIcon className="w-4 h-4" />
-                        </div>
-                        <span className="font-mono text-xs font-bold">{post.comment_count}</span>
-                    </button>
-                </div>
-
-                {(showComments || post.comments.length > 0) && (
-                    <div className="bg-[var(--glass-surface)] p-6 border-t border-white/5 shadow-inner">
-                        {post.comments.length > 0 ? (
-                            <div className="space-y-3 mb-6">
-                                {post.comments.map(comment => (
-                                    <CommentCard key={comment.id} comment={comment} onDelete={() => onDeleteComment(comment.id)} onReply={handleReply} onUserClick={onUserClick} currentUserId={currentUserId} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-4 mb-2">
-                                <p className="text-xs text-slate-600 font-mono uppercase tracking-widest">Signal Void // No replies</p>
-                            </div>
-                        )}
-
-                        {currentUserId && (
-                            <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
-                                {commentContent.startsWith('@') && (
-                                    <div className="flex items-center space-x-2 px-2">
-                                        <span className="text-[10px] text-[var(--primary-accent)] font-mono uppercase tracking-widest">
-                                            Replying to {commentContent.split(' ')[0]}
-                                        </span>
-                                    </div>
-                                )}
-                                <div className="flex space-x-3 items-end">
-                                    <div className="flex-1 relative group/input">
-                                        <div className="absolute inset-0 bg-[var(--primary-accent)]/20 rounded-xl blur opacity-0 group-focus-within/input:opacity-100 transition duration-300"></div>
-                                        <input
-                                            ref={inputRef}
-                                            type="text"
-                                            value={commentContent}
-                                            onChange={(e) => setCommentContent(e.target.value)}
-                                            placeholder="Transmit reply..."
-                                            className="relative w-full bg-[var(--bg-color)] border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-[var(--primary-accent)]/50 transition-all placeholder-slate-600"
-                                        />
-                                    </div>
-                                    <button type="submit" disabled={isCommenting || !commentContent.trim()} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 uppercase tracking-wider hover:text-[var(--primary-accent)]">
-                                        {isCommenting ? '...' : 'Send'}
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div >
-    );
-};
 
 
 const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentView, focusedPostId, onEditPost, refreshKey }) => {
@@ -507,8 +320,7 @@ const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentVie
                                 post={post}
                                 onToggleLike={() => handleToggleLike(post)}
                                 onDelete={() => handleDeletePost(post.id)}
-                                onEdit={() => onEditPost?.(post)}
-                                onComment={(content) => handleCreateComment(post.id, content)}
+                                onComment={(content, parentId) => handleCreateComment(post.id, content)} // Updated signature
                                 onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
                                 currentUserId={user?.uid}
                                 onUserClick={(uid) => setCurrentView({ type: ViewType.Post, domainId, domainName, focusedPostId, overlayProfileId: uid })}
