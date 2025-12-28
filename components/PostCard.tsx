@@ -188,26 +188,16 @@ const PostCard: React.FC<PostCardProps> = ({
 
                     {/* Premium Post Image (Smart Letterboxing) */}
                     {post.imageURL && (
-                        <div className="mb-6 rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative bg-black h-96 group/image">
-                            {/* Blurred Background Layer (Fill) */}
-                            <div className="absolute inset-0">
-                                <img
-                                    src={post.imageURL}
-                                    alt="Background"
-                                    className="w-full h-full object-cover blur-2xl opacity-50 scale-110"
-                                />
-                                <div className="absolute inset-0 bg-black/20"></div>
-                            </div>
-
+                        <div className="mb-6 rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative bg-black max-h-[500px] group/image">
                             {/* Main Content Layer (Contain) */}
-                            <div className="absolute inset-0 flex items-center justify-center p-2">
+                            <div className="w-full h-full flex items-center justify-center bg-black/50">
                                 <img
                                     src={post.imageURL}
                                     alt="Transmission visual"
-                                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-lg relative z-10 transition-transform duration-500 group-hover/image:scale-[1.02]"
+                                    className="max-w-full max-h-[500px] w-auto h-auto object-contain mx-auto"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
-                                        (e.target as HTMLImageElement).parentElement!.parentElement!.style.display = 'none';
+                                        (e.target as HTMLImageElement).parentElement!.style.display = 'none';
                                     }}
                                 />
                             </div>
@@ -241,7 +231,10 @@ const PostCard: React.FC<PostCardProps> = ({
                             </button>
                         </div>
                         <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+
                                 const url = `${window.location.origin}/post/${post.id}`;
                                 const btn = document.getElementById(`share-${post.id}`);
 
