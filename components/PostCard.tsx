@@ -155,8 +155,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
     return (
         <div className="relative group perspective-1000 mb-8 w-full max-w-2xl mx-auto">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 to-indigo-600/20 rounded-[24px] blur-xl opacity-0 group-hover:opacity-100 transition duration-700"></div>
-            <div className="relative glass-panel rounded-[24px] p-0 overflow-hidden border border-white/5 bg-[#0a0a0f]/80 backdrop-blur-2xl transition-all duration-300 group-hover:-translate-y-1 shadow-2xl shadow-black/50">
+            <div className="relative rounded-[24px] p-0 overflow-hidden border border-white/5 bg-[#0a0a0f] transition-all duration-300 group-hover:-translate-y-1 shadow-2xl shadow-black/50">
                 <div className="p-5 md:p-7">
                     <div className="flex justify-between items-start mb-4 md:mb-5">
                         <div className="flex items-center space-x-3.5 cursor-pointer group/author" onClick={() => onUserClick(post.user_id)}>
