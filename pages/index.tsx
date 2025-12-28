@@ -25,6 +25,36 @@ const Home: React.FC = () => {
     // Main Entry Point
     const { user, profile, isLoading } = useAuth(); // Helper to check auth state for sidebar
     const [currentView, setCurrentView] = useState<ViewState>({ type: ViewType.Explore });
+
+    // NAVIGATION STACK HANDLER
+    const handleSetCurrentView = useCallback((view: ViewState) => {
+        // Only push if it's a "forward" navigation (not going back to Explore if already there)
+        // Simple logic: If view is NOT Explore, push state.
+        // If view IS Explore, we might be going back, but let's just push for now to be safe.
+        // A better approach is to only push if we are changing "depth".
+
+        setCurrentView(view);
+
+        // Push to browser history so back button works
+        const state = { view };
+        const title = `Hyle - ${view.type}`;
+        window.history.pushState(state, title, window.location.pathname);
+    }, []);
+
+    // Listen for PopState (Back Button)
+    useEffect(() => {
+        const onPopState = (event: PopStateEvent) => {
+            if (event.state && event.state.view) {
+                setCurrentView(event.state.view);
+            } else {
+                // Default back to Explore on root history
+                setCurrentView({ type: ViewType.Explore });
+            }
+        };
+
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
     const [domainTree, setDomainTree] = useState<Domain | null>(null);
     const [showSplash, setShowSplash] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -106,28 +136,28 @@ const Home: React.FC = () => {
     // Onboarding Redirect
     useEffect(() => {
         if (user && profile && !profile.username && currentView.type !== ViewType.Profile) {
-            setCurrentView({ type: ViewType.Profile });
+            handleSetCurrentView({ type: ViewType.Profile });
         }
-    }, [user, profile, currentView]);
+    }, [user, profile, currentView, handleSetCurrentView]);
 
     const renderView = useCallback(() => {
         switch (currentView.type) {
             case ViewType.Explore:
-                return <ExploreView key="explore" setCurrentView={setCurrentView} initialPath={currentView.initialPath} domainTree={domainTree} setDomainTree={setDomainTree} />;
+                return <ExploreView key="explore" setCurrentView={handleSetCurrentView} initialPath={currentView.initialPath} domainTree={domainTree} setDomainTree={setDomainTree} />;
             case ViewType.Post:
                 return (
                     <PostView
                         key={`post-${currentView.domainId}`}
                         domainId={currentView.domainId}
                         domainName={currentView.domainName}
-                        setCurrentView={setCurrentView}
+                        setCurrentView={handleSetCurrentView}
                         focusedPostId={currentView.focusedPostId}
                         onEditPost={handleOpenCreateModal}
                         refreshKey={refreshKey}
                     />
                 );
             case ViewType.Profile:
-                return <ProfileView key={`profile-${refreshKey}`} setCurrentView={setCurrentView} initialTab={currentView.initialTab} targetUserId={currentView.userId} onEditPost={handleOpenCreateModal} />;
+                return <ProfileView key={`profile-${refreshKey}`} setCurrentView={handleSetCurrentView} initialTab={currentView.initialTab} targetUserId={currentView.userId} onEditPost={handleOpenCreateModal} />;
             case ViewType.Chat:
                 if (currentView.chatId && currentView.otherUserId) {
                     return (
@@ -135,26 +165,26 @@ const Home: React.FC = () => {
                             key={`chat-${currentView.chatId}`}
                             chatId={currentView.chatId}
                             otherUserId={currentView.otherUserId}
-                            setCurrentView={setCurrentView}
+                            setCurrentView={handleSetCurrentView}
                         />
                     );
                 }
-                return <ExploreView setCurrentView={setCurrentView} domainTree={domainTree} setDomainTree={setDomainTree} />;
+                return <ExploreView setCurrentView={handleSetCurrentView} domainTree={domainTree} setDomainTree={setDomainTree} />;
             case ViewType.Inbox:
-                return <InboxView setCurrentView={setCurrentView} />;
+                return <InboxView setCurrentView={handleSetCurrentView} />;
             case ViewType.Notifications:
-                return <NotificationsView setCurrentView={setCurrentView} />;
+                return <NotificationsView setCurrentView={handleSetCurrentView} />;
             case ViewType.Search:
-                return <SearchView domainTree={domainTree} setCurrentView={setCurrentView} />;
+                return <SearchView domainTree={domainTree} setCurrentView={handleSetCurrentView} />;
             case ViewType.Settings:
-                return <SettingsView setCurrentView={setCurrentView} />;
+                return <SettingsView setCurrentView={handleSetCurrentView} />;
             case ViewType.Feed:
-                return <FeedView onViewChange={setCurrentView} />;
+                return <FeedView onViewChange={handleSetCurrentView} />;
 
             case ViewType.Auth:
                 return <div className="flex-1 flex items-center justify-center"><AuthView /></div>;
             default:
-                return <ExploreView setCurrentView={setCurrentView} domainTree={domainTree} setDomainTree={setDomainTree} />;
+                return <ExploreView setCurrentView={handleSetCurrentView} domainTree={domainTree} setDomainTree={setDomainTree} />;
         }
     }, [currentView, domainTree, refreshKey]); // Added domainTree dependency
 
@@ -194,12 +224,12 @@ const Home: React.FC = () => {
 
                 {/* Mobile Top Bar - Hide in Chat or when Profile Overlay is active */}
                 {currentView.type !== ViewType.Chat && !currentView.overlayProfileId && (
-                    <MobileTopBar setCurrentView={setCurrentView} currentViewType={currentView.type} />
+                    <MobileTopBar setCurrentView={handleSetCurrentView} currentViewType={currentView.type} />
                 )}
 
                 {/* Global Sidebar - Hidden on mobile initially, visible on desktop */}
                 <Sidebar
-                    setCurrentView={setCurrentView}
+                    setCurrentView={handleSetCurrentView}
                     currentViewType={currentView.type}
                     onOpenCreatePostModal={() => handleOpenCreateModal()}
                 />
@@ -210,7 +240,7 @@ const Home: React.FC = () => {
                     {currentView.overlayProfileId && (
                         <ProfileView
                             key={`overlay-${currentView.overlayProfileId}`}
-                            setCurrentView={setCurrentView}
+                            setCurrentView={handleSetCurrentView}
                             targetUserId={currentView.overlayProfileId}
                             isOverlay={true}
                             onClose={handleCloseOverlay}
@@ -227,7 +257,7 @@ const Home: React.FC = () => {
                             handlePostActionSuccess();
                         }}
                         domainTree={domainTree}
-                        setCurrentView={setCurrentView}
+                        setCurrentView={handleSetCurrentView}
                         initialPost={postToEdit}
                     />
                 </main>
@@ -235,7 +265,7 @@ const Home: React.FC = () => {
                 {/* Mobile Bottom Nav - Hide in Chat or when Profile Overlay is active */}
                 {currentView.type !== ViewType.Chat && !currentView.overlayProfileId && (
                     <MobileBottomNav
-                        setCurrentView={setCurrentView}
+                        setCurrentView={handleSetCurrentView}
                         currentViewType={currentView.type}
                         onOpenCreatePostModal={() => handleOpenCreateModal()}
                     />

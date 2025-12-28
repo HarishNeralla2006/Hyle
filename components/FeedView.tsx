@@ -311,7 +311,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     onTouchStart={onTouchStart}
                     onTouchMove={onTouchMove}
                     onTouchEnd={onTouchEnd}
-                    className="w-full h-full max-w-4xl px-3 md:px-4 pt-20 md:pt-24 pb-20 md:pb-32 overflow-y-auto custom-scrollbar snap-y snap-mandatory md:snap-none relative"
+                    className="w-full h-full max-w-4xl px-3 md:px-4 pt-28 md:pt-32 pb-20 md:pb-32 overflow-y-auto custom-scrollbar relative"
                 >
                     {/* Pull to Refresh Indicator */}
                     <div
@@ -335,7 +335,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                     </div>
 
                     {/* Feed Content */}
-                    <div className="flex flex-col items-center mb-8 md:mb-8 snap-start shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start w-full max-w-4xl px-4">
+                    <div className="flex flex-col items-center mb-8 md:mb-8 shrink-0 min-h-[20vh] md:min-h-0 justify-center md:justify-start w-full max-w-4xl px-4">
 
                         {/* Floating Sidebar Toggle - Always Visible */}
                         <button
@@ -349,7 +349,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                         {/* Conditional Header Rendering */}
                         {!activeCommunity ? (
                             // GLOBAL FEED (Simple Restoration)
-                            <div className="w-full flex items-center justify-between py-6 px-2 md:px-0 snap-start">
+                            <div className="w-full flex items-center justify-between py-6 px-2 md:px-0">
                                 <div>
                                     <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Signal</h1>
                                     <p className="text-slate-500 font-medium text-sm">Your universal feed.</p>
@@ -364,7 +364,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                             </div>
                         ) : (
                             // COMMUNITY VIEW (Profile Style)
-                            <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4 snap-start">
+                            <div className="w-full bg-[#0f0f11] border border-white/10 rounded-[2.5rem] p-6 md:p-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10 shadow-2xl relative overflow-hidden mt-4">
 
                                 {/* Decorative Blur */}
                                 <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px]"></div>
@@ -452,7 +452,7 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
                         </div>
                     ) : (
                         posts.map(post => (
-                            <div key={post.id} className="snap-start mb-6">
+                            <div key={post.id} className="mb-6">
                                 <PostCard
                                     post={post}
                                     onToggleLike={() => handleToggleLike(post)}

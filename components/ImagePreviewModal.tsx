@@ -309,7 +309,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
           {/* Subtle overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none"></div>
         </div>
-        <div className="text-[var(--text-color)] text-[15px] mb-8 min-h-[5rem] max-h-48 overflow-y-auto transition-opacity duration-300 whitespace-pre-wrap leading-relaxed description-scrollbar pr-2 font-light">
+        <div className="text-[var(--text-color)] text-[15px] mb-8 min-h-[5rem] max-h-[60vh] overflow-y-auto transition-opacity duration-300 whitespace-pre-wrap leading-relaxed description-scrollbar pr-2 font-light">
           {isLoading && (
             <div className="flex items-center space-x-2 h-full justify-center opacity-60">
               <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '-0.3s' }}></div>

@@ -105,7 +105,7 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center w-full min-h-screen p-6 animate-fade-in pt-12 pb-48">
+        <div className="flex flex-col items-center justify-start md:justify-center w-full min-h-screen p-6 animate-fade-in pt-12 pb-48">
             <div className="text-center mb-12 relative z-10">
                 <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-4 font-['Inter'] drop-shadow-2xl">
                     Select Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">Frequency</span>
@@ -160,8 +160,8 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
                     onClick={handleSave}
                     disabled={selectedTopics.length === 0 || isSaving}
                     className={`pointer-events-auto px-12 py-5 rounded-full font-black tracking-widest uppercase transition-all duration-500 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] border border-white/20 ${selectedTopics.length > 0 && !isSaving
-                            ? 'bg-white text-black hover:scale-105 hover:bg-slate-100 active:scale-95'
-                            : 'bg-black/80 text-slate-500 backdrop-blur-md border-white/5 cursor-not-allowed scale-95'
+                        ? 'bg-white text-black hover:scale-105 hover:bg-slate-100 active:scale-95'
+                        : 'bg-black/80 text-slate-500 backdrop-blur-md border-white/5 cursor-not-allowed scale-95'
                         }`}
                 >
                     {isSaving ? (
