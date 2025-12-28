@@ -188,6 +188,9 @@ const FeedView: React.FC<{ onViewChange: (view: ViewState) => void }> = ({ onVie
 
             const postsWithComments = rawPosts.map((post: any) => ({
                 ...post,
+                like_count: Number(post.like_count),
+                comment_count: Number(post.comment_count),
+                is_liked_by_user: Boolean(post.is_liked_by_user),
                 profiles: {
                     username: post.username,
                     photoURL: post.photoURL

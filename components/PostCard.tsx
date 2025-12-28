@@ -192,8 +192,8 @@ const PostCard: React.FC<PostCardProps> = ({
                                     <HeartIcon strokeWidth={2.5} className={`w-5 h-5 transition-transform duration-300 group-active/like:scale-125 ${post.is_liked_by_user ? 'fill-current scale-110' : 'scale-100 group-hover/like:scale-110'}`} />
                                     {post.is_liked_by_user && <div className="absolute inset-0 bg-pink-500/20 blur-md rounded-full animate-pulse"></div>}
                                 </div>
-                                {post.like_count > 0 && (
-                                    <span className="text-sm font-semibold tabular-nums leading-none">{post.like_count}</span>
+                                {Number(post.like_count) > 0 && (
+                                    <span className="text-sm font-semibold tabular-nums leading-none ml-1">{post.like_count}</span>
                                 )}
                             </button>
                             <button
