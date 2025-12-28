@@ -3,7 +3,8 @@ name: Content Seeder
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Startup time: At minute 0 of every 6th hour (12:00, 6:00, etc.)
+    - cron: '0 */4 * * *' # "Forever" Mode: Runs every 4 hours.
+    # Cost Note: 100% Free. Uses Reddit JSON (Public) + TiDB Serverless (Free Tier).
   workflow_dispatch: # Allow manual trigger
 
 jobs:
