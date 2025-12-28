@@ -149,7 +149,7 @@ const PostCard: React.FC<{ post: PostWithAuthorAndLikes; onToggleLike: () => voi
                         <div className={`p-1.5 rounded-full transition-colors ${post.is_liked_by_user ? 'text-pink-500' : 'group-hover/btn:bg-white/5'}`}>
                             <HeartIcon className={`w-4 h-4 transition-transform group-active/btn:scale-125 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
                         </div>
-                        <span className="font-mono text-xs font-bold">{post.like_count}</span>
+                        <span className="font-mono text-xs font-bold">{Number(post.like_count) > 0 ? post.like_count : ''}</span>
                     </button>
 
                     <button onClick={() => setShowComments(!showComments)} className={`group/btn flex items-center space-x-2 transition-colors ${showComments ? 'text-[var(--primary-accent)]' : 'text-slate-400 hover:text-white'}`}>
