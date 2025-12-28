@@ -40,6 +40,40 @@ export const initializeSchema = async () => {
             } catch (e) { console.log("PhotoURL add failed", e); }
         }
 
+        // Posts Table Schema Repair
+        await execute(`
+            CREATE TABLE IF NOT EXISTS posts (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id VARCHAR(255),
+                domain_id VARCHAR(255),
+                content TEXT,
+                imageURL LONGTEXT,
+                created_at DATETIME
+            )
+        `);
+
+        if (!(await checkColumnExists('posts', 'domain_id'))) {
+            try { await execute('ALTER TABLE posts ADD COLUMN domain_id VARCHAR(255)'); console.log("Added domain_id to posts."); } catch (e) { console.log("Failed to add domain_id", e); }
+        }
+        if (!(await checkColumnExists('posts', 'imageURL'))) {
+            try { await execute('ALTER TABLE posts ADD COLUMN imageURL LONGTEXT'); console.log("Added imageURL to posts."); } catch (e) { console.log("Failed to add imageURL", e); }
+        }
+        if (!(await checkColumnExists('posts', 'user_id'))) {
+            try { await execute('ALTER TABLE posts ADD COLUMN user_id VARCHAR(255)'); console.log("Added user_id to posts."); } catch (e) { console.log("Failed to add user_id", e); }
+        }
+
+        // Comments Table Schema Repair
+        await execute(`
+            CREATE TABLE IF NOT EXISTS comments (
+                id VARCHAR(36) PRIMARY KEY,
+                post_id VARCHAR(36),
+                user_id VARCHAR(255),
+                content TEXT,
+                parent_id VARCHAR(255) DEFAULT NULL,
+                created_at DATETIME
+            )
+        `);
+
         // Theme Column (Fix for 500 Error on Theme Save)
         if (!(await checkColumnExists('profiles', 'theme'))) {
             try {
