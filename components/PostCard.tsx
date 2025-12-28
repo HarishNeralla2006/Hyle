@@ -233,6 +233,7 @@ const PostCard: React.FC<PostCardProps> = ({
                             onClick={async (e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
+                                e.currentTarget.blur(); // CRITICAL: Release focus to prevent glitch
 
                                 const url = `${window.location.origin}/post/${post.id}`;
                                 const btn = document.getElementById(`share-${post.id}`);
