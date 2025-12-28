@@ -24,4 +24,4 @@ jobs:
     - name: Run Seeder
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      run: npx ts-node scripts/seed-content.ts
+      run: npx tsx scripts/seed-content.ts
