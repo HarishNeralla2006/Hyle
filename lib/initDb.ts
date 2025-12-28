@@ -162,6 +162,16 @@ export const initializeSchema = async () => {
             try { await execute('ALTER TABLE messages ADD COLUMN created_at DATETIME'); } catch (e) { console.log('Message created_at migration failed', e); }
         }
 
+        // Likes Table
+        await execute(`
+            CREATE TABLE IF NOT EXISTS likes (
+                user_id VARCHAR(255) NOT NULL,
+                post_id VARCHAR(255) NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, post_id)
+            )
+        `);
+
         await execute(`
             CREATE TABLE IF NOT EXISTS notifications (
                 id VARCHAR(255) PRIMARY KEY,

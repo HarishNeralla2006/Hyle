@@ -47,22 +47,57 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [sortedTopics, setSortedTopics] = useState(TOPICS);
 
-    // ALGORITHM: Fetch post counts to prioritize "Trending" domains
+    // ALGORITHM: Smart Recommendations - Global Popularity + User Affinity
     useEffect(() => {
         const fetchTrends = async () => {
             try {
-                // Get post volume per domain
+                // 1. Get Global Popularity (Post Counts)
                 const rows = await execute('SELECT domain_id, COUNT(*) as count FROM posts GROUP BY domain_id');
-                const counts: Record<string, number> = {};
+                const globalCounts: Record<string, number> = {};
                 rows.forEach((r: any) => {
-                    counts[r.domain_id] = Number(r.count);
+                    globalCounts[r.domain_id] = Number(r.count);
                 });
 
-                // Sort: High volume first (Algorithm)
+                // 2. Get User Affinity (Saved Domains)
+                let userSaved: string[] = [];
+                if (user) {
+                    const savedRows = await execute('SELECT domain_id FROM saved_domains WHERE user_id = ?', [user.uid]);
+                    userSaved = savedRows.map((r: any) => r.domain_id);
+                }
+
+                // 3. Get User Affinity (Liked Posts -> Domains)
+                let userLikedDomains: string[] = [];
+                if (user) {
+                    // Join likes with posts to get domain_id
+                    const likedRows = await execute(`
+                        SELECT p.domain_id 
+                        FROM likes l 
+                        JOIN posts p ON l.post_id = p.id 
+                        WHERE l.user_id = ?
+                   `, [user.uid]);
+                    userLikedDomains = likedRows.map((r: any) => r.domain_id);
+                }
+
+                // 4. Calculate Weight & Sort
+                // Weight: Global Count + (Saved * 50) + (Liked * 10)
                 const sorted = [...TOPICS].sort((a, b) => {
-                    const countA = counts[a.id] || 0;
-                    const countB = counts[b.id] || 0;
-                    return countB - countA; // Descending
+                    const countA = globalCounts[a.id] || 0;
+                    const countB = globalCounts[b.id] || 0;
+
+                    let scoreA = countA;
+                    let scoreB = countB;
+
+                    // Boost for Saved
+                    if (userSaved.includes(a.id)) scoreA += 50;
+                    if (userSaved.includes(b.id)) scoreB += 50;
+
+                    // Boost for Liked (Frequency of likes in that domain)
+                    const likesA = userLikedDomains.filter(d => d === a.id).length;
+                    const likesB = userLikedDomains.filter(d => d === b.id).length;
+                    scoreA += (likesA * 10);
+                    scoreB += (likesB * 10);
+
+                    return scoreB - scoreA; // Descending
                 });
 
                 setSortedTopics(sorted);
@@ -74,7 +109,7 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
         };
 
         fetchTrends();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (profile?.interests) {
@@ -122,14 +157,16 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ onComplete }) => {
                         <button
                             key={topic.id}
                             onClick={() => toggleTopic(topic.id)}
-                            className={`group relative p-6 rounded-2xl border transition-all duration-200 flex flex-col items-center justify-center h-32 md:h-40 ${isSelected
-                                ? 'bg-white border-white text-black'
-                                : 'bg-transparent border-white/10 text-slate-400 hover:border-white/30 hover:text-white'
+                            className={`group relative p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center h-32 md:h-40 ${isSelected
+                                ? 'bg-white border-white text-black scale-105 shadow-xl'
+                                : `bg-transparent border-white/10 text-slate-400 hover:text-white hover:scale-105 hover:border-[var(--hover-color)] hover:shadow-lg`
                                 }`}
+                            style={!isSelected ? { '--hover-color': topic.color.includes('red') ? '#ef4444' : topic.color.includes('blue') ? '#3b82f6' : topic.color.includes('green') ? '#22c55e' : '#a855f7' } as React.CSSProperties : {}}
                         >
-                            <span className={`font-bold tracking-tight text-lg md:text-xl ${isSelected ? 'text-black' : 'text-current'}`}>
+                            <span className={`font-bold tracking-tight text-lg md:text-xl transition-colors ${isSelected ? 'text-black' : 'text-current'}`}>
                                 {topic.label}
                             </span>
+                            {/* Minimal Color Accent Dot on Hover (Optional, keeping it super minimal as per request, just border is good) */}
                         </button>
                     );
                 })}

@@ -38,6 +38,35 @@ const flattenDomainTree = (node: Domain | null, prefix: string = ''): FrequencyR
 const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [mode, setMode] = useState<SearchMode>('frequency');
+    const [recentSearches, setRecentSearches] = useState<string[]>([]); // New State
+
+    // Load History
+    useEffect(() => {
+        const saved = localStorage.getItem('spark_recent_searches');
+        if (saved) {
+            setRecentSearches(JSON.parse(saved));
+        }
+    }, []);
+
+    const addToHistory = (term: string) => {
+        if (!term.trim()) return;
+        const normalized = term.trim();
+        const updated = [normalized, ...recentSearches.filter(t => t !== normalized)].slice(0, 10);
+        setRecentSearches(updated);
+        localStorage.setItem('spark_recent_searches', JSON.stringify(updated));
+    };
+
+    const removeFromHistory = (term: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const updated = recentSearches.filter(t => t !== term);
+        setRecentSearches(updated);
+        localStorage.setItem('spark_recent_searches', JSON.stringify(updated));
+    };
+
+    const handleResultClick = (view: ViewState) => {
+        addToHistory(searchTerm);
+        setCurrentView(view);
+    };
 
     // Frequency Mode State
     const [activeFrequencies, setActiveFrequencies] = useState<FrequencyResult[]>([]);
@@ -248,6 +277,33 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
             <div className="flex-1 overflow-y-auto px-3 md:px-4 pb-32 custom-scrollbar">
                 <div className="max-w-4xl mx-auto py-2 md:py-4">
 
+                    {/* RECENT SEARCHES (When input is empty and history exists) */}
+                    {!searchTerm && recentSearches.length > 0 && (
+                        <div className="mb-8 animate-fade-in">
+                            <div className="flex items-center justify-between px-2 mb-3">
+                                <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Recent Searches</h3>
+                                <button onClick={() => { setRecentSearches([]); localStorage.removeItem('spark_recent_searches'); }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear All</button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {recentSearches.map(term => (
+                                    <button
+                                        key={term}
+                                        onClick={() => setSearchTerm(term)}
+                                        className="flex items-center pl-3 pr-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 transition-all group"
+                                    >
+                                        <span className="text-slate-300 text-xs font-medium mr-2 group-hover:text-white">{term}</span>
+                                        <div
+                                            onClick={(e) => removeFromHistory(term, e)}
+                                            className="p-0.5 rounded-full hover:bg-white/20 text-slate-500 hover:text-red-300 transition-colors"
+                                        >
+                                            <CloseIcon className="w-3 h-3" />
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* FREQUENCY RESULTS */}
                     {mode === 'frequency' && (
                         <>
@@ -260,7 +316,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                                     {filteredFrequencies.map((domain) => (
                                         <button
                                             key={domain.id}
-                                            onClick={() => setCurrentView({ type: ViewType.Post, domainId: domain.id, domainName: domain.name })}
+                                            onClick={() => handleResultClick({ type: ViewType.Post, domainId: domain.id, domainName: domain.name })}
                                             className="flex items-center p-2.5 md:p-4 rounded-3xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-[var(--primary-accent)]/30 transition-all group text-left"
                                         >
                                             <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center mr-3 md:mr-4 group-hover:scale-110 transition-transform ${domain.count ? 'bg-[var(--primary-accent)]/20 text-[var(--primary-accent)]' : 'bg-slate-800 text-slate-600'}`}>
@@ -296,7 +352,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                                     {signalResults.map((post) => (
                                         <div
                                             key={post.id}
-                                            onClick={() => setCurrentView({ type: ViewType.Post, domainId: post.domain_id, domainName: post.domain_id, focusedPostId: post.id })}
+                                            onClick={() => handleResultClick({ type: ViewType.Post, domainId: post.domain_id, domainName: post.domain_id, focusedPostId: post.id })}
                                             className="bg-[#1a1a2e] border border-white/5 p-4 rounded-xl hover:border-[var(--primary-accent)]/30 cursor-pointer transition-colors group"
                                         >
                                             <div className="flex items-center space-x-3 mb-3">
@@ -330,7 +386,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
                                     {peopleResults.map((profile) => (
                                         <div
                                             key={profile.id}
-                                            onClick={() => setCurrentView((prev) => ({ ...prev, overlayProfileId: profile.id }))}
+                                            onClick={() => handleResultClick({ type: ViewType.Profile, overlayProfileId: profile.id } as any)}
                                             className="flex items-center p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-[var(--primary-accent)]/30 cursor-pointer transition-all group"
                                         >
                                             <div className="w-12 h-12 rounded-full bg-slate-800 overflow-hidden mr-3 shrink-0 ring-2 ring-transparent group-hover:ring-[var(--primary-accent)]/50 transition-all">
