@@ -29,13 +29,13 @@ export const getSmartSuggestion = async (query: string): Promise<string | null> 
     try {
         // 3. Construct URL
         // action=opensearch: Standard autocomplete API
-        // limit=1: We only want the "Best" match
-        // namespace=0: Only articles (no user pages, talk pages, etc)
+        // limit=5: Get multiple candidates to skip "Disambiguation" pages or simple capitalization matches
+        // namespace=0: Only articles
         // origin=*: Required for CORS in browser
         const params = new URLSearchParams({
             action: 'opensearch',
             search: term,
-            limit: '1',
+            limit: '5',
             namespace: '0',
             format: 'json',
             origin: '*'
@@ -52,15 +52,20 @@ export const getSmartSuggestion = async (query: string): Promise<string | null> 
         const suggestions = data[1];
 
         if (suggestions && suggestions.length > 0) {
-            const bestMatch = suggestions[0];
+            // Smart Selection Logic:
+            // Iterate through candidates to find the first "Useful" suggestion.
 
-            // 4. Smart Logic: Only return if it's a "Correction" or "Expansion"
-            // If user types "AI", and wiki gives "Artificial Intelligence" -> RETURN IT.
-            // If user types "Artificial Intelligence", and wiki gives "Artificial Intelligence" -> RETURN NULL (No point suggesting what they already typed).
+            for (const candidate of suggestions) {
+                // Skip if it's the exact same as input (case-insensitive) - e.g. "Ai" vs "ai"
+                if (candidate.toLowerCase() === term.toLowerCase()) continue;
 
-            if (bestMatch.toLowerCase() !== term.toLowerCase()) {
-                suggestionCache[term] = bestMatch;
-                return bestMatch;
+                // Skip if it is a disambiguation page
+                if (candidate.toLowerCase().includes('(disambiguation)')) continue;
+
+                // If checking "ai", and we found "Artificial intelligence", this is PERFECT.
+                // This candidate is likely the main topic.
+                suggestionCache[term] = candidate;
+                return candidate;
             }
         }
 
