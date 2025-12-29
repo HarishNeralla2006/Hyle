@@ -59,7 +59,11 @@ const isNonDomain = (page: WikiPage): boolean => {
         'actors',
         'surgeons',
         'monarchs',
-        'presidents'
+        'presidents',
+        'hosts',
+        'presenters',
+        'broadcasters',
+        'writers'
     ];
 
     // Check if any category indicates a person
@@ -91,6 +95,7 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             gsrlimit: '5',
             prop: 'categories|pageprops',
             cllimit: '50',
+            redirects: '1', // Resolve redirects to get categories
             format: 'json',
             origin: '*'
         });
@@ -104,6 +109,7 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             gpslimit: '5',
             prop: 'categories|pageprops',
             cllimit: '50',
+            redirects: '1', // Resolve redirects to get categories
             format: 'json',
             origin: '*'
         });
