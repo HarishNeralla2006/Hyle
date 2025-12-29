@@ -11,6 +11,7 @@ interface WikiPage {
     title: string;
     index: number; // Search rank index
     categories?: Array<{ title: string }>;
+    description?: string; // Semantic Description (e.g. "American TV Host")
     pageprops?: {
         disambiguation?: string;
     };
@@ -25,10 +26,11 @@ interface WikiGeneratorResponse {
 // In-memory cache to prevent redundant network calls for the same term
 const suggestionCache: Record<string, string[] | null> = {};
 
-// Helper: Check if a page is a "Person" or non-domain entity using INTELLIGENT REGEX
+// Helper: Check if a page is a "Person" or non-domain entity using INTELLIGENT REGEX & SEMANTICS
 const isNonDomain = (page: WikiPage): boolean => {
     const categories = page.categories?.map(c => c.title.toLowerCase()) || [];
     const title = page.title.toLowerCase();
+    const description = page.description?.toLowerCase() || "";
 
     // 1. Explicit Title Filters
     if (title.startsWith("list of")) return true;
@@ -43,7 +45,33 @@ const isNonDomain = (page: WikiPage): boolean => {
     const nsfwTerms = ['porn', 'sex', 'xxx', 'nsfw', 'adult', 'erotic', 'nude', 'nudity', 'fetish', 'hentai'];
     if (nsfwTerms.some(term => title.includes(term))) return true;
 
-    // 3. INTELLIGENT REGEX CATEGORY FILTER
+    // 3. SEMANTIC DESCRIPTION FILTER (Intelligent)
+    // Blocks entities based on what Wikipedia says they ARE.
+    const blockedSemantics = [
+        // People roles
+        'actor', 'actress', 'television', 'presenter', 'broadcaster', 'host',
+        'footballer', 'player', 'coach', 'manager', 'athlete', 'swimmer', 'runner',
+        'musician', 'singer', 'songwriter', 'rapper', 'drummer', 'guitarist', 'vocalist', 'band',
+        'politician', 'senator', 'governor', 'president', 'monarch', 'prince', 'princess', 'king', 'queen',
+        'writer', 'author', 'novelist', 'poet', 'journalist',
+        'lawyer', 'judge', 'attorney',
+        'surgeon', 'physician', 'doctor',
+
+        // Creative Works (that aren't "Topics")
+        'film', 'movie', 'album', 'song', 'single by', 'episode', 'series', 'telenovela',
+
+        // Biographical indicators
+        'born', 'died', 'american', 'english', 'british', 'canadian', 'australian', 'indian' // e.g. "American actor"
+    ];
+
+    if (description) {
+        // If description explicitly identifies as a blocked role
+        if (blockedSemantics.some(term => description.includes(term))) {
+            return true;
+        }
+    }
+
+    // 4. INTELLIGENT REGEX CATEGORY FILTER (Fallback & Safety Net)
     // Blocks entire classes of pages (People, Alumni, Sports) based on structural patterns.
     const patterns = [
         /\d{4} births/,              // Matches "Category:1935 births", "1950 births" etc. (Catches 99% of people)
@@ -88,7 +116,7 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             generator: 'search',
             gsrsearch: term,
             gsrlimit: '5',
-            prop: 'categories|pageprops',
+            prop: 'categories|pageprops|description', // Fetch Description
             cllimit: 'max', // CRITICAL: Fetch MAX categories to ensure 'births/deaths' isn't starved
             redirects: '1', // Resolve redirects to get categories
             format: 'json',
@@ -102,7 +130,7 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             generator: 'prefixsearch',
             gpssearch: term,
             gpslimit: '5',
-            prop: 'categories|pageprops',
+            prop: 'categories|pageprops|description', // Fetch Description
             cllimit: 'max', // CRITICAL: Fetch MAX categories
             redirects: '1', // Resolve redirects to get categories
             format: 'json',
