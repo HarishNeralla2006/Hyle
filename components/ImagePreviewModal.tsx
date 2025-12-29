@@ -268,7 +268,18 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ domain, domainPat
               className={`w-full h-full object-cover transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setImageLoaded(true)}
               onError={(e) => {
-                e.currentTarget.style.display = 'none';
+                // If it's a user image (from the list), remove it from the rotation
+                if (userImages.length > 0) {
+                  console.warn(`[ImagePreview] Failed to load image at index ${currentImageIndex}. removing.`);
+                  const badImage = userImages[currentImageIndex];
+                  setUserImages(prev => prev.filter(img => img !== badImage));
+                  // Index correction happens automatically due to re-render, 
+                  // but we might need to clamp index if it was the last one.
+                  setCurrentImageIndex(prev => prev >= userImages.length - 1 ? 0 : prev);
+                } else {
+                  // If it's the fallback generic image, just hide it
+                  e.currentTarget.style.display = 'none';
+                }
                 setImageLoaded(true);
               }}
             />

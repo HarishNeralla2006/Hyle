@@ -195,8 +195,16 @@ const PostCard: React.FC<PostCardProps> = ({
                                     alt="Transmission visual"
                                     className="max-w-full max-h-[500px] w-auto h-auto object-contain mx-auto"
                                     onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                        (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                                        const img = e.target as HTMLImageElement;
+                                        img.style.display = 'none';
+                                        // Traverse up to find the container with 'group/image' class or just the parent div
+                                        const container = img.closest('.group\\/image') as HTMLElement;
+                                        if (container) {
+                                            container.style.display = 'none';
+                                        } else {
+                                            // Fallback: hide immediate parent
+                                            (img.parentElement as HTMLElement).style.display = 'none';
+                                        }
                                     }}
                                 />
                             </div>
