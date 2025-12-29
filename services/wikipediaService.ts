@@ -11,6 +11,9 @@ interface WikiPage {
     title: string;
     index: number; // Search rank index
     categories?: Array<{ title: string }>;
+    pageprops?: {
+        disambiguation?: string;
+    };
 }
 
 interface WikiGeneratorResponse {
@@ -29,8 +32,12 @@ const isNonDomain = (page: WikiPage): boolean => {
 
     // 1. Explicit Title Filters
     if (title.startsWith("list of")) return true;
+    if (title.startsWith("relationship between")) return true;
     if (title.includes('(disambiguation)')) return true;
     if (title.startsWith("category:")) return true;
+
+    // Check pageprops for disambiguation
+    if (page.pageprops && page.pageprops.disambiguation !== undefined) return true;
 
     // 2. NSFW Filter
     const nsfwTerms = ['porn', 'sex', 'xxx', 'nsfw', 'adult', 'erotic', 'nude', 'nudity', 'fetish', 'hentai'];
@@ -49,7 +56,10 @@ const isNonDomain = (page: WikiPage): boolean => {
         'coaches',
         'players',
         'musicians',
-        'actors'
+        'actors',
+        'surgeons',
+        'monarchs',
+        'presidents'
     ];
 
     // Check if any category indicates a person
@@ -79,8 +89,8 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             generator: 'search',
             gsrsearch: term,
             gsrlimit: '5',
-            prop: 'categories',
-            cllimit: '10',
+            prop: 'categories|pageprops',
+            cllimit: '50',
             format: 'json',
             origin: '*'
         });
@@ -92,8 +102,8 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             generator: 'prefixsearch',
             gpssearch: term,
             gpslimit: '5',
-            prop: 'categories',
-            cllimit: '10',
+            prop: 'categories|pageprops',
+            cllimit: '50',
             format: 'json',
             origin: '*'
         });
