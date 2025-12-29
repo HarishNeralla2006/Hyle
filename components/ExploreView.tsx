@@ -9,6 +9,7 @@ import DomainSphere, { calculateSphereSize } from './DomainSphere';
 import ConstructingDomainsView from './ConstructingDomainsView';
 import Navbar from './Navbar';
 import { useStatus } from '../contexts/StatusContext';
+import { getSmartSuggestion } from '../services/wikipediaService';
 
 interface ExploreViewProps {
     setCurrentView: (view: ViewState) => void;
@@ -203,6 +204,21 @@ const ExploreView: React.FC<ExploreViewProps> = ({ setCurrentView, initialPath, 
     }, []);
 
     const breadcrumbRef = useRef<HTMLDivElement>(null);
+    const [searchSuggestion, setSearchSuggestion] = useState<string | null>(null);
+
+    // Smart Suggestion Logic (Debounced)
+    useEffect(() => {
+        const checkSuggestion = async () => {
+            if (searchQuery.trim().length > 1) {
+                const suggestion = await getSmartSuggestion(searchQuery);
+                setSearchSuggestion(suggestion);
+            } else {
+                setSearchSuggestion(null);
+            }
+        };
+        const timer = setTimeout(checkSuggestion, 400); // 400ms debounce
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     useEffect(() => {
         setLoadMoreVariant(0);
@@ -718,33 +734,52 @@ const ExploreView: React.FC<ExploreViewProps> = ({ setCurrentView, initialPath, 
                 <div
                     className={`absolute top-full mt-3 left-4 right-4 overflow-hidden transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${isSearchVisible ? 'max-h-24 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}
                 >
-                    <div className="glass-panel rounded-[24px] p-1.5 flex items-center shadow-lg border border-white/10">
-                        <button
-                            onClick={handleSearchSubmit}
-                            className="p-3 text-slate-400 hover:text-white transition-colors"
-                            title="Global Search (Reset View)"
-                        >
-                            <SearchIcon className="w-5 h-5" />
-                        </button>
-                        <form onSubmit={handleSearchSubmit} className="flex-1">
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                placeholder="Jump to topic..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-transparent text-white placeholder-slate-500 focus:outline-none text-base py-3 font-medium px-1"
-                            />
-                        </form>
-                        <div className="w-px h-6 bg-white/10 mx-2"></div>
-                        <button
-                            onClick={handleContextSearchSubmit}
-                            className="p-3 text-[var(--primary-accent)] hover:text-white transition-colors flex items-center space-x-2"
-                            title="Context Aware Search (Add to View)"
-                        >
-                            <span className="text-xs font-bold uppercase tracking-wider hidden md:block">Add Context</span>
-                            <PlusCircleIcon className="w-5 h-5" />
-                        </button>
+                    <div className="flex flex-col">
+                        <div className="glass-panel rounded-[24px] p-1.5 flex items-center shadow-lg border border-white/10 relative z-20">
+                            <button
+                                onClick={handleSearchSubmit}
+                                className="p-3 text-slate-400 hover:text-white transition-colors"
+                                title="Global Search (Reset View)"
+                            >
+                                <SearchIcon className="w-5 h-5" />
+                            </button>
+                            <form onSubmit={handleSearchSubmit} className="flex-1">
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder="Jump to topic..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-transparent text-white placeholder-slate-500 focus:outline-none text-base py-3 font-medium px-1"
+                                />
+                            </form>
+                            <div className="w-px h-6 bg-white/10 mx-2"></div>
+                            <button
+                                onClick={handleContextSearchSubmit}
+                                className="p-3 text-[var(--primary-accent)] hover:text-white transition-colors flex items-center space-x-2"
+                                title="Context Aware Search (Add to View)"
+                            >
+                                <span className="text-xs font-bold uppercase tracking-wider hidden md:block">Add Context</span>
+                                <PlusCircleIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Smart Suggestion Chip */}
+                        {searchSuggestion && (
+                            <div className="pl-4 mt-1 animate-fade-in relative z-10">
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery(searchSuggestion);
+                                        // Optional: Auto-submit or let user decide? Let's just fill it for now.
+                                        // executeSearch(searchSuggestion); // Uncomment to auto-search
+                                    }}
+                                    className="text-xs text-slate-400 hover:text-[var(--primary-accent)] transition-colors flex items-center space-x-1 group"
+                                >
+                                    <span className="opacity-70">Did you mean:</span>
+                                    <span className="font-bold text-white group-hover:underline decoration-[var(--primary-accent)] decoration-2 underline-offset-2">{searchSuggestion}</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 

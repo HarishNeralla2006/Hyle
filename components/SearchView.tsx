@@ -4,6 +4,7 @@ import { SearchIcon, CloseIcon } from './icons';
 import { execute } from '../lib/tidbClient';
 import { ROOT_DOMAINS } from '../services/pollinationsService';
 import { normalizeSubTopic } from '../lib/normalization';
+import { getSmartSuggestion } from '../services/wikipediaService';
 
 interface SearchViewProps {
     domainTree: Domain | null;
@@ -176,6 +177,17 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
 
 
     // Combined Frequency List (Hybrid: Tree + Active)
+    // 5. Smart Search: We need to know the canonical term (e.g. "Maths" -> "Mathematics")
+    // We cannot use async inside useMemo, so we need a separate effect to fetch the suggestion for SearchView
+    const [smartTerm, setSmartTerm] = useState<string | null>(null);
+    useEffect(() => {
+        if (mode === 'frequency' && searchTerm.trim().length > 1) {
+            getSmartSuggestion(searchTerm).then(s => setSmartTerm(s));
+        } else {
+            setSmartTerm(null);
+        }
+    }, [searchTerm, mode]);
+
     const filteredFrequencies = useMemo(() => {
         if (mode !== 'frequency') return [];
 
@@ -206,11 +218,24 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
         // SMART REDIRECT: partial match against the canonical name if fuzzy match succeeds
         const normalized = normalizeSubTopic(searchTerm).toLowerCase();
 
-        const filtered = mergedResults.filter(d =>
-            d.name.toLowerCase().includes(lower) ||
-            d.id.toLowerCase().includes(lower) ||
-            (normalized !== lower && d.name.toLowerCase().includes(normalized))
-        );
+        // Use the fetched smart suggestion if available
+        const smartLower = smartTerm ? smartTerm.toLowerCase() : null;
+
+        const filtered = mergedResults.filter(d => {
+            const nameLower = d.name.toLowerCase();
+            const idLower = d.id.toLowerCase();
+
+            // Standard Match
+            if (nameLower.includes(lower) || idLower.includes(lower)) return true;
+
+            // Normalized Match (Client-side simple)
+            if (normalized !== lower && nameLower.includes(normalized)) return true;
+
+            // Wikipedia Smart Match (e.g. "Maths" -> "Mathematics")
+            if (smartLower && nameLower.includes(smartLower)) return true;
+
+            return false;
+        });
 
         // 6. Sort: High signal count first, then trending, then alphabetical
         return filtered.sort((a, b) => {
@@ -218,7 +243,7 @@ const SearchView: React.FC<SearchViewProps> = ({ domainTree, setCurrentView }) =
             if (countDiff !== 0) return countDiff;
             return a.name.localeCompare(b.name);
         }).slice(0, 50); // Limit display
-    }, [mode, searchTerm, domainTree, activeFrequencies]);
+    }, [mode, searchTerm, domainTree, activeFrequencies, smartTerm]);
 
 
     return (
