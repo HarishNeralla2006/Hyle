@@ -1,9 +1,10 @@
+export { }; // Force module scope
 
-const fetch = globalThis.fetch;
+// const fetch = globalThis.fetch; // Not needed in Node 18+
 
 const WIKI_API_URL = "https://en.wikipedia.org/w/api.php";
 
-async function testRegexFilter(term) {
+async function testRegexFilter(term: string) {
     console.log(`\n--- Testing Regex Filter: "${term}" ---`);
     const params = new URLSearchParams({
         action: 'query',

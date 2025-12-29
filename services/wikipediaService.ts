@@ -162,26 +162,48 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
         const relevanceSuggestions = processPages(relevanceData);
         const prefixSuggestions = processPages(prefixData);
 
-        // 5. Merge & Deduplicate (Interleaved)
-        // [Rel #1, Prefix #1, Rel #2, Prefix #2...]
+        // 5. Merge & Deduplicate (Prefix-First Strategy)
+        // Goal: "What you type is what you see". 
+        // Logic: 
+        // 1. Exact/Prefix matches go to the TOP.
+        // 2. Fuzzy/Relevance matches go to the BOTTOM.
 
-        const rawResults: string[] = [];
-        const maxLength = Math.max(relevanceSuggestions.length, prefixSuggestions.length);
+        const allCandidates = [...prefixSuggestions, ...relevanceSuggestions];
+        const uniqueCandidates = new Set<string>();
+        const validCandidates: string[] = [];
 
-        for (let i = 0; i < maxLength; i++) {
-            if (i < relevanceSuggestions.length) rawResults.push(relevanceSuggestions[i]);
-            if (i < prefixSuggestions.length) rawResults.push(prefixSuggestions[i]);
+        // Deduplicate
+        for (const title of allCandidates) {
+            if (uniqueCandidates.has(title)) continue;
+            uniqueCandidates.add(title);
+            validCandidates.push(title);
         }
 
-        const uniqueResults = new Set<string>();
-        const finalSuggestions: string[] = [];
+        // 6. Strict Ranking
+        const rankedSuggestions = validCandidates.sort((a, b) => {
+            const lowerA = a.toLowerCase();
+            const lowerB = b.toLowerCase();
+            const lowerTerm = term.toLowerCase();
 
-        for (const title of rawResults) {
-            if (uniqueResults.has(title)) continue;
-            uniqueResults.add(title);
-            finalSuggestions.push(title);
-            if (finalSuggestions.length >= 4) break;
-        }
+            const aStarts = lowerA.startsWith(lowerTerm);
+            const bStarts = lowerB.startsWith(lowerTerm);
+
+            // Rule 1: StartsWith takes priority
+            if (aStarts && !bStarts) return -1; // A comes first
+            if (!aStarts && bStarts) return 1;  // B comes first
+
+            // Rule 2: If both start with (or both don't), sort by length (shorter is usually better match)
+            // e.g. "Lit" -> "Literacy" (8) vs "Literature" (10). User probably wants shorter, more common word first?
+            // Actually, for "Lite", "Lite" is best.
+            if (lowerA.length !== lowerB.length) {
+                return lowerA.length - lowerB.length;
+            }
+
+            // Rule 3: Alphabetical fallback
+            return lowerA.localeCompare(lowerB);
+        });
+
+        const finalSuggestions = rankedSuggestions.slice(0, 4);
 
         suggestionCache[term] = finalSuggestions;
         return finalSuggestions;
