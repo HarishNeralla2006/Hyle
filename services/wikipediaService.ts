@@ -5,11 +5,15 @@
 
 const WIKI_API_URL = "https://en.wikipedia.org/w/api.php";
 
-interface WikiOpenSearchResponse extends Array<any> {
-    0: string; // The search query
-    1: string[]; // Completion suggestions
-    2: string[]; // Descriptions (often empty for Opensearch)
-    3: string[]; // Links
+// Wikipedia Query Response Interface
+interface WikiQueryResponse {
+    query: {
+        search: Array<{
+            title: string;
+            snippet: string;
+            pageid: number;
+        }>;
+    };
 }
 
 // In-memory cache to prevent redundant network calls for the same term
@@ -28,15 +32,15 @@ export const getSmartSuggestion = async (query: string): Promise<string | null> 
 
     try {
         // 3. Construct URL
-        // action=opensearch: Standard autocomplete API
-        // limit=5: Get multiple candidates to skip "Disambiguation" pages or simple capitalization matches
-        // namespace=0: Only articles
-        // origin=*: Required for CORS in browser
+        // action=query&list=search: Performs a full text/relevance search (better than opensearch prefix matching)
+        // srsearch: The query term
+        // srlimit=5: Fetch top 5 results
+        // origin=*: CORS
         const params = new URLSearchParams({
-            action: 'opensearch',
-            search: term,
-            limit: '5',
-            namespace: '0',
+            action: 'query',
+            list: 'search',
+            srsearch: term,
+            srlimit: '5',
             format: 'json',
             origin: '*'
         });
@@ -48,24 +52,35 @@ export const getSmartSuggestion = async (query: string): Promise<string | null> 
             return null;
         }
 
-        const data: WikiOpenSearchResponse = await response.json();
-        const suggestions = data[1];
+        const data: WikiQueryResponse = await response.json();
+        const results = data.query?.search;
 
-        if (suggestions && suggestions.length > 0) {
+        if (results && results.length > 0) {
             // Smart Selection Logic:
-            // Iterate through candidates to find the first "Useful" suggestion.
+            for (const candidate of results) {
+                const title = candidate.title;
 
-            for (const candidate of suggestions) {
-                // Skip if it's the exact same as input (case-insensitive) - e.g. "Ai" vs "ai"
-                if (candidate.toLowerCase() === term.toLowerCase()) continue;
+                // Skip "List of..." pages
+                if (title.startsWith("List of")) continue;
 
-                // Skip if it is a disambiguation page
-                if (candidate.toLowerCase().includes('(disambiguation)')) continue;
+                // Skip "Disambiguation" pages
+                // Note: The API usually puts "(disambiguation)" in the title if it's explicitly one,
+                // or the snippet might clarify, but title check is usually enough for top results.
+                if (title.toLowerCase().includes('(disambiguation)')) continue;
 
-                // If checking "ai", and we found "Artificial intelligence", this is PERFECT.
-                // This candidate is likely the main topic.
-                suggestionCache[term] = candidate;
-                return candidate;
+                // Skip Category pages
+                if (title.startsWith("Category:")) continue;
+
+                // Skip if it's identical to the query (to avoid redundant suggestions like "ai" -> "AI")
+                // UNLESS the casing is significantly cleaner (e.g. "vr" -> "VR").
+                // For now, let's allow it if it's not a strict case-insensitive match, OR if it fixes capitalization.
+                // Actually, showing "Artificial Intelligence" for "ai" is good.
+                // Showing "VR" for "vr" is good.
+                // Showing "virtual reality" for "vr" is GREAT.
+                // We simply return the title.
+
+                suggestionCache[term] = title;
+                return title;
             }
         }
 
@@ -74,7 +89,6 @@ export const getSmartSuggestion = async (query: string): Promise<string | null> 
         return null;
 
     } catch (error) {
-        // Fail silently - this is an enhancement, not a critical path
         console.warn("Smart Search Failed:", error);
         return null;
     }
