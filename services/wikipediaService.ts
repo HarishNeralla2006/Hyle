@@ -6,6 +6,7 @@
 const WIKI_API_URL = "https://en.wikipedia.org/w/api.php";
 
 // Wikipedia Query Response Interface
+// Wikipedia Query Response Interface
 interface WikiQueryResponse {
     query: {
         search: Array<{
@@ -16,27 +17,28 @@ interface WikiQueryResponse {
     };
 }
 
-// In-memory cache to prevent redundant network calls for the same term
-const suggestionCache: Record<string, string | null> = {};
+// Wikipedia OpenSearch Response Interface
+type WikiOpenSearchResponse = [string, string[], string[], string[]];
 
-export const getSmartSuggestion = async (query: string): Promise<string | null> => {
+// In-memory cache to prevent redundant network calls for the same term
+const suggestionCache: Record<string, string[] | null> = {};
+
+export const getSmartSuggestions = async (query: string): Promise<string[]> => {
     const term = query.trim();
 
     // 1. Basic Validation
-    if (!term || term.length < 2) return null;
+    if (!term || term.length < 2) return [];
 
     // 2. Check Cache
     if (suggestionCache[term] !== undefined) {
-        return suggestionCache[term];
+        return suggestionCache[term] || [];
     }
 
     try {
-        // 3. Construct URL
-        // action=query&list=search: Performs a full text/relevance search (better than opensearch prefix matching)
-        // srsearch: The query term
-        // srlimit=5: Fetch top 5 results
-        // origin=*: CORS
-        const params = new URLSearchParams({
+        // 3. Parallel Fetch: Autocomplete (Prefix) + Relevance (Topic)
+
+        // A. Relevance Search (Finds "Virtual Reality" for "vr")
+        const queryParams = new URLSearchParams({
             action: 'query',
             list: 'search',
             srsearch: term,
@@ -45,51 +47,72 @@ export const getSmartSuggestion = async (query: string): Promise<string | null> 
             origin: '*'
         });
 
-        const response = await fetch(`${WIKI_API_URL}?${params.toString()}`);
+        // B. Autocomplete Search (Finds "Science" for "sci")
+        const openSearchParams = new URLSearchParams({
+            action: 'opensearch',
+            search: term,
+            limit: '5',
+            namespace: '0',
+            format: 'json',
+            origin: '*'
+        });
 
-        if (!response.ok) {
-            console.warn("Wiki API Error:", response.statusText);
-            return null;
+        const [queryRes, openSearchRes] = await Promise.all([
+            fetch(`${WIKI_API_URL}?${queryParams.toString()}`),
+            fetch(`${WIKI_API_URL}?${openSearchParams.toString()}`)
+        ]);
+
+        if (!queryRes.ok || !openSearchRes.ok) {
+            console.warn("Wiki API Error");
+            return [];
         }
 
-        const data: WikiQueryResponse = await response.json();
-        const results = data.query?.search;
+        const queryData: WikiQueryResponse = await queryRes.json();
+        const openSearchData: WikiOpenSearchResponse = await openSearchRes.json();
 
-        if (results && results.length > 0) {
-            // Smart Selection Logic:
-            for (const candidate of results) {
-                const title = candidate.title;
+        // 4. Merge & Deduplicate Results
+        const rawResults: string[] = [];
 
-                // Skip "List of..." pages
-                if (title.startsWith("List of")) continue;
+        // Prioritize Autocomplete for short prefixes (likely user is typing a word)
+        // Check if query length is small (< 4), prioritising autocomplete
+        const openSearchSuggestions = openSearchData[1] || [];
+        rawResults.push(...openSearchSuggestions);
 
-                // Skip "Disambiguation" pages
-                // Note: The API usually puts "(disambiguation)" in the title if it's explicitly one,
-                // or the snippet might clarify, but title check is usually enough for top results.
-                if (title.toLowerCase().includes('(disambiguation)')) continue;
+        // Add Relevance results
+        const querySuggestions = queryData.query?.search?.map(s => s.title) || [];
+        rawResults.push(...querySuggestions);
 
-                // Skip Category pages
-                if (title.startsWith("Category:")) continue;
+        const uniqueResults = new Set<string>();
+        const finalSuggestions: string[] = [];
 
-                // Skip if it's identical to the query (to avoid redundant suggestions like "ai" -> "AI")
-                // UNLESS the casing is significantly cleaner (e.g. "vr" -> "VR").
-                // For now, let's allow it if it's not a strict case-insensitive match, OR if it fixes capitalization.
-                // Actually, showing "Artificial Intelligence" for "ai" is good.
-                // Showing "VR" for "vr" is good.
-                // Showing "virtual reality" for "vr" is GREAT.
-                // We simply return the title.
+        for (const candidate of rawResults) {
+            // Clean title
+            const title = candidate;
 
-                suggestionCache[term] = title;
-                return title;
-            }
+            // Dedupe
+            if (uniqueResults.has(title)) continue;
+
+            // Filter logic
+            if (title.startsWith("List of")) continue;
+            if (title.toLowerCase().includes('(disambiguation)')) continue;
+            if (title.startsWith("Category:")) continue;
+
+            // Logic to filter strict case-insensitive duplicates if we already have a display version?
+            // Actually, we usually want the most "proper" casing.
+            // If we have "sci" (input), and we find "SCI" and "Science".
+            // We keep both. "SCI" might be what they mean.
+
+            uniqueResults.add(title);
+            finalSuggestions.push(title);
+
+            if (finalSuggestions.length >= 4) break; // Limit to 4 chips
         }
 
-        // No useful suggestion found
-        suggestionCache[term] = null;
-        return null;
+        suggestionCache[term] = finalSuggestions;
+        return finalSuggestions;
 
     } catch (error) {
         console.warn("Smart Search Failed:", error);
-        return null;
+        return [];
     }
 };

@@ -9,7 +9,7 @@ import DomainSphere, { calculateSphereSize } from './DomainSphere';
 import ConstructingDomainsView from './ConstructingDomainsView';
 import Navbar from './Navbar';
 import { useStatus } from '../contexts/StatusContext';
-import { getSmartSuggestion } from '../services/wikipediaService';
+import { getSmartSuggestions } from '../services/wikipediaService';
 
 interface ExploreViewProps {
     setCurrentView: (view: ViewState) => void;
@@ -204,16 +204,21 @@ const ExploreView: React.FC<ExploreViewProps> = ({ setCurrentView, initialPath, 
     }, []);
 
     const breadcrumbRef = useRef<HTMLDivElement>(null);
-    const [searchSuggestion, setSearchSuggestion] = useState<string | null>(null);
+    const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
     // Smart Suggestion Logic (Debounced)
     useEffect(() => {
         const checkSuggestion = async () => {
             if (searchQuery.trim().length > 1) {
-                const suggestion = await getSmartSuggestion(searchQuery);
-                setSearchSuggestion(suggestion);
+                const suggestions = await getSmartSuggestions(searchQuery);
+                // Filter out empty results
+                if (suggestions && suggestions.length > 0) {
+                    setSearchSuggestions(suggestions);
+                } else {
+                    setSearchSuggestions([]);
+                }
             } else {
-                setSearchSuggestion(null);
+                setSearchSuggestions([]);
             }
         };
         const timer = setTimeout(checkSuggestion, 400); // 400ms debounce
@@ -764,20 +769,19 @@ const ExploreView: React.FC<ExploreViewProps> = ({ setCurrentView, initialPath, 
                             </button>
                         </div>
 
-                        {/* Smart Suggestion Chip */}
-                        {searchSuggestion && (
-                            <div className="pl-4 mt-1 animate-fade-in relative z-10">
-                                <button
-                                    onClick={() => {
-                                        setSearchQuery(searchSuggestion);
-                                        // Optional: Auto-submit or let user decide? Let's just fill it for now.
-                                        // executeSearch(searchSuggestion); // Uncomment to auto-search
-                                    }}
-                                    className="text-xs text-slate-400 hover:text-[var(--primary-accent)] transition-colors flex items-center space-x-1 group"
-                                >
-                                    <span className="opacity-70">Did you mean:</span>
-                                    <span className="font-bold text-white group-hover:underline decoration-[var(--primary-accent)] decoration-2 underline-offset-2">{searchSuggestion}</span>
-                                </button>
+                        {/* Smart Suggestion Chips */}
+                        {searchSuggestions.length > 0 && (
+                            <div className="pl-4 mt-2 animate-fade-in relative z-10 flex flex-wrap gap-2">
+                                <span className="text-xs text-slate-500 font-medium py-1">Did you mean:</span>
+                                {searchSuggestions.map((suggestion) => (
+                                    <button
+                                        key={suggestion}
+                                        onClick={() => setSearchQuery(suggestion)}
+                                        className="text-xs font-bold text-[var(--primary-accent)] hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors"
+                                    >
+                                        {suggestion}
+                                    </button>
+                                ))}
                             </div>
                         )}
                     </div>
