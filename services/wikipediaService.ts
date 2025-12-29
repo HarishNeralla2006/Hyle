@@ -103,6 +103,11 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             if (title.toLowerCase().includes('(disambiguation)')) continue;
             if (title.startsWith("Category:")) continue;
 
+            // NSFW Filter
+            const nsfwTerms = ['porn', 'sex', 'xxx', 'nsfw', 'adult', 'erotic', 'nude', 'nudity', 'fetish', 'hentai'];
+            const lowerTitle = title.toLowerCase();
+            if (nsfwTerms.some(term => lowerTitle.includes(term))) continue;
+
             uniqueResults.add(title);
             finalSuggestions.push(title);
 
