@@ -97,22 +97,9 @@ const isNonDomain = (page: WikiPage): boolean => {
 
 // --- HARDCODED ALIASES (User Override) ---
 const HARDCODED_ALIASES: Record<string, string> = {
-    // Tech Aliases
-    "ai": "Artificial intelligence",
-    "ml": "Machine learning",
-    "vr": "Virtual reality",
-    "ar": "Augmented reality",
-    "ui": "User interface",
-    "ux": "User experience",
-    "iot": "Internet of things",
-    "llm": "Large language model",
-    "nlp": "Natural language processing",
-    "saas": "Software as a service",
-
     // User Requests
     "alias": "Pseudonym", // Explicit hardcode request
     "alais": "Pseudonym", // Typo handling
-    "lit": "Literature"
 };
 
 export const getSmartSuggestions = async (query: string): Promise<string[]> => {
