@@ -70,17 +70,23 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
         const queryData: WikiQueryResponse = await queryRes.json();
         const openSearchData: WikiOpenSearchResponse = await openSearchRes.json();
 
-        // 4. Merge & Deduplicate Results
-        const rawResults: string[] = [];
+        // 4. Merge & Deduplicate Results (Interleaved Strategy)
+        // Goal: Mix "Topic" (Relevance) and "Word" (Autocomplete) so neither dominates.
+        // Pattern: [Relevance #1, Autocomplete #1, Relevance #2, Autocomplete #2, ...]
 
-        // Prioritize Autocomplete for short prefixes (likely user is typing a word)
-        // Check if query length is small (< 4), prioritising autocomplete
         const openSearchSuggestions = openSearchData[1] || [];
-        rawResults.push(...openSearchSuggestions);
-
-        // Add Relevance results
         const querySuggestions = queryData.query?.search?.map(s => s.title) || [];
-        rawResults.push(...querySuggestions);
+
+        const rawResults: string[] = [];
+        const maxLength = Math.max(openSearchSuggestions.length, querySuggestions.length);
+
+        for (let i = 0; i < maxLength; i++) {
+            // Priority 1: Relevance (Topic) - "Virtual Reality"
+            if (i < querySuggestions.length) rawResults.push(querySuggestions[i]);
+
+            // Priority 2: Autocomplete (Word) - "Science" (or "Vr")
+            if (i < openSearchSuggestions.length) rawResults.push(openSearchSuggestions[i]);
+        }
 
         const uniqueResults = new Set<string>();
         const finalSuggestions: string[] = [];
@@ -96,11 +102,6 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             if (title.startsWith("List of")) continue;
             if (title.toLowerCase().includes('(disambiguation)')) continue;
             if (title.startsWith("Category:")) continue;
-
-            // Logic to filter strict case-insensitive duplicates if we already have a display version?
-            // Actually, we usually want the most "proper" casing.
-            // If we have "sci" (input), and we find "SCI" and "Science".
-            // We keep both. "SCI" might be what they mean.
 
             uniqueResults.add(title);
             finalSuggestions.push(title);
