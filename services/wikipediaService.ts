@@ -25,7 +25,7 @@ interface WikiGeneratorResponse {
 // In-memory cache to prevent redundant network calls for the same term
 const suggestionCache: Record<string, string[] | null> = {};
 
-// Helper: Check if a page is a "Person" or non-domain entity
+// Helper: Check if a page is a "Person" or non-domain entity using INTELLIGENT REGEX
 const isNonDomain = (page: WikiPage): boolean => {
     const categories = page.categories?.map(c => c.title.toLowerCase()) || [];
     const title = page.title.toLowerCase();
@@ -43,31 +43,26 @@ const isNonDomain = (page: WikiPage): boolean => {
     const nsfwTerms = ['porn', 'sex', 'xxx', 'nsfw', 'adult', 'erotic', 'nude', 'nudity', 'fetish', 'hentai'];
     if (nsfwTerms.some(term => title.includes(term))) return true;
 
-    // 3. Category Filters (People, etc.)
-    const personCategories = [
-        'living people',
-        'births',
-        'deaths',
-        'people',
-        'human names',
-        'surnames',
-        'given names',
-        'sportspeople',
-        'coaches',
-        'players',
-        'musicians',
-        'actors',
-        'surgeons',
-        'monarchs',
-        'presidents',
-        'hosts',
-        'presenters',
-        'broadcasters',
-        'writers'
+    // 3. INTELLIGENT REGEX CATEGORY FILTER
+    // Blocks entire classes of pages (People, Alumni, Sports) based on structural patterns.
+    const patterns = [
+        /\d{4} births/,              // Matches "Category:1935 births", "1950 births" etc. (Catches 99% of people)
+        /\d{4} deaths/,              // Matches "Category:2024 deaths"
+        /living people/i,            // Matches "Category:Living people"
+        /possible living people/i,
+        /(alumni|people|graduates|expatriates|students) (from|of|at|to)/i, // "People from X", "Alumni of Y"
+        /(players|coaches|managers|politicians|musicians|singers|actors|monarchs|bishops|clergymen)/i,
+        /(television|film) (personalities|presenters|hosts|producers|directors)/i
     ];
 
-    // Check if any category indicates a person
-    if (categories.some(cat => personCategories.some(pc => cat.includes(pc)))) return true;
+    // Check if any category matches our intelligent patterns
+    for (const cat of categories) {
+        for (const pattern of patterns) {
+            if (pattern.test(cat)) {
+                return true;
+            }
+        }
+    }
 
     return false;
 };
@@ -94,7 +89,7 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             gsrsearch: term,
             gsrlimit: '5',
             prop: 'categories|pageprops',
-            cllimit: '50',
+            cllimit: 'max', // CRITICAL: Fetch MAX categories to ensure 'births/deaths' isn't starved
             redirects: '1', // Resolve redirects to get categories
             format: 'json',
             origin: '*'
@@ -108,7 +103,7 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             gpssearch: term,
             gpslimit: '5',
             prop: 'categories|pageprops',
-            cllimit: '50',
+            cllimit: 'max', // CRITICAL: Fetch MAX categories
             redirects: '1', // Resolve redirects to get categories
             format: 'json',
             origin: '*'
