@@ -72,7 +72,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
     return (
         <div className="w-full h-full flex flex-col bg-[#050505] relative overflow-hidden">
             {/* Mobile Cover Skeleton */}
-            <div className="md:hidden w-full h-[40vh] relative mb-6">
+            <div className="md:hidden w-full h-[40vh] relative">
                 <ShimmerBlock className="absolute inset-0 z-0 bg-white/5" />
                 {/* Simulated Top Nav */}
                 <div className="absolute top-6 left-6 right-6 flex justify-between z-10">
@@ -146,8 +146,16 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                     {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="aspect-[4/5] rounded-[1.5rem] bg-[#111] overflow-hidden border border-white/5 relative">
+                        <div key={i} className="aspect-[4/5] rounded-[1.5rem] bg-[#111] overflow-hidden border border-white/5 relative group">
                             <ShimmerBlock className="absolute inset-0 opacity-20" />
+                            {/* Overlay Text Skeleton */}
+                            <div className="absolute inset-0 flex flex-col justify-end p-4 space-y-2">
+                                <ShimmerBlock className="h-4 w-3/4 rounded opacity-40" />
+                                <div className="flex justify-between items-center">
+                                    <ShimmerBlock className="h-3 w-1/3 rounded opacity-30" />
+                                    <ShimmerBlock className="h-4 w-4 rounded-full opacity-30" />
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>
