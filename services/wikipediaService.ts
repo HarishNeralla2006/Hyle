@@ -77,14 +77,18 @@ const isBlockedEntity = (entity: WikidataEntity): boolean => {
         'writer', 'author', 'novelist', 'poet', 'journalist',
         'lawyer', 'judge', 'attorney',
         'surgeon', 'physician', 'doctor',
-        'researcher', 'scientist', 'inventor',
+        'researcher', 'scientist', 'inventor', 'biologist', 'physicist', 'chemist', 'botanist', 'zoologist', 'naturalist', 'explorer', 'geologist', 'philologist',
+        'philosopher', 'historian', 'mathematician',
+        'artist', 'painter', 'sculptor', 'architect', 'designer',
+        'priest', 'bishop', 'cleric', 'theologian',
+        'soldier', 'commander', 'general', 'admiral', 'officer',
         'given name', 'family name', 'surname',
 
         // Business / Organizations
         'business', 'company', 'corporation', 'enterprise', 'manufacturer', 'firm', 'agency',
         'brand', 'retailer', 'store', 'shop',
         'university', 'college', 'school', 'academy', 'institute', 'department', 'faculty', 'campus', 'observatory',
-        'political party', 'government', 'organization', 'association', 'charity', 'foundation',
+        'political party', 'political group', 'government', 'organization', 'association', 'charity', 'foundation',
 
         // Creative Works (Strict Block)
         'episode', 'song', 'single by', 'album by',
@@ -102,6 +106,10 @@ const isBlockedEntity = (entity: WikidataEntity): boolean => {
         if (pattern.test(description)) {
             return true;
         }
+
+        // 4. HEURISTIC: Block "Born in..." or Date Ranges (indicating a person)
+        // e.g. "French biologist (1822–1895)" or "born 1990"
+        if (/\b(born\s+\d{4}|1\d{3}[-–—]\d{4})\b/.test(description)) return true;
     }
 
     return false;
