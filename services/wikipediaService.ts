@@ -65,9 +65,10 @@ const isBlockedEntity = (entity: WikidataEntity): boolean => {
 
     // 3. SEMANTIC DESCRIPTION FILTER
     // Blocks "Humans", "Businesses", "Creative Works" if they aren't the primary topic.
-    const blockedSemantics = [
+    // USES REGEX "\bWORD\b" to avoid substring matches (e.g. "man" in "mental").
+    const blockedTerms = [
         // People / Humans (Strict Block)
-        'human', 'person', 'people', 'man', 'woman',
+        'person', 'people', 'human being', 'adult male', 'adult female',
         'actor', 'actress', 'presenter', 'broadcaster', 'host',
         'player', 'coach', 'manager', 'athlete', 'swimmer', 'runner',
         'musician', 'singer', 'songwriter', 'rapper', 'drummer', 'guitarist', 'vocalist', 'band',
@@ -76,21 +77,29 @@ const isBlockedEntity = (entity: WikidataEntity): boolean => {
         'writer', 'author', 'novelist', 'poet', 'journalist',
         'lawyer', 'judge', 'attorney',
         'surgeon', 'physician', 'doctor',
-        'researcher', 'scientist', // e.g. "American scientist" - we want the FIELD, not the person
+        'researcher', 'scientist', 'inventor',
+        'given name', 'family name', 'surname',
 
         // Business / Organizations
         'business', 'company', 'corporation', 'enterprise', 'manufacturer', 'firm', 'agency',
-        'brand', 'retailer',
+        'brand', 'retailer', 'store', 'shop',
+        'university', 'college', 'school', 'academy', 'institute', 'department', 'faculty', 'campus', 'observatory',
+        'political party', 'government', 'organization', 'association', 'charity', 'foundation',
 
-        // Specific Object/Product types (if not desired as topics)
-        'smartphone model', 'vehicle model', 'video game console',
+        // Creative Works (Strict Block)
+        'episode', 'song', 'single by', 'album by',
+        'film', 'movie', 'series', 'show', 'video game',
+        'journal', 'magazine', 'newspaper', 'periodical', 'publication', 'book', 'novel',
 
-        // Creative Works (Optional: block specific episodes/songs to keep it "Topic" focused)
-        'episode', 'song', 'single by', 'album by'
+        // Geography (Reduce noise)
+        'commune', 'municipality', 'territory', 'canton', 'airport', 'airline',
     ];
 
     if (description) {
-        if (blockedSemantics.some(term => description.includes(term))) {
+        // Create a single regex for performance: /\b(word1|word2|...)\b/i
+        // Escape special regex chars if any (though our list is simple words)
+        const pattern = new RegExp(`\\b(${blockedTerms.join('|')})\\b`, 'i');
+        if (pattern.test(description)) {
             return true;
         }
     }
