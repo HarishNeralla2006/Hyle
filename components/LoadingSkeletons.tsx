@@ -112,18 +112,18 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
 
             {/* Content Content (Shared with Mobile Adjustments) */}
             <div className="md:hidden px-6 -mt-24 relative z-10 mb-8 flex flex-col">
-                <ShimmerBlock className="h-12 w-3/4 rounded-lg mb-2 bg-white/10" /> {/* Mobile Name */}
-                <ShimmerBlock className="h-4 w-1/3 rounded opacity-50 mb-6 bg-white/10" /> {/* Handle */}
+                <ShimmerBlock className="h-12 w-3/4 rounded-lg mb-2 bg-white/20" /> {/* Mobile Name */}
+                <ShimmerBlock className="h-4 w-1/3 rounded opacity-50 mb-6 bg-white/20" /> {/* Handle */}
 
                 {/* Mobile Stats */}
                 <div className="flex justify-between w-full pr-4 mb-6">
-                    <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8" /><ShimmerBlock className="h-2 w-10 opacity-50" /></div>
-                    <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8" /><ShimmerBlock className="h-2 w-10 opacity-50" /></div>
-                    <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8" /><ShimmerBlock className="h-2 w-10 opacity-50" /></div>
+                    <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8 bg-white/10" /><ShimmerBlock className="h-2 w-10 opacity-50 bg-white/10" /></div>
+                    <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8 bg-white/10" /><ShimmerBlock className="h-2 w-10 opacity-50 bg-white/10" /></div>
+                    <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8 bg-white/10" /><ShimmerBlock className="h-2 w-10 opacity-50 bg-white/10" /></div>
                 </div>
 
                 {/* Mobile "Update Identity" Button - Only for Own Profile */}
-                {isOwnProfile && <ShimmerBlock className="h-14 w-full rounded-2xl mb-6" />}
+                {isOwnProfile && <ShimmerBlock className="h-14 w-full rounded-2xl mb-6 bg-white/20" />}
 
                 <ShimmerBlock className="h-20 w-full rounded-xl" />
             </div>
