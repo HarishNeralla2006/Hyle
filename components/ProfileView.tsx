@@ -111,6 +111,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
                 setEditPhoto(myProfile.photoURL || null);
             }
         } else if (profileId) {
+            // FORCE SKELETON: Reset displayProfile when switching to a different user
+            setDisplayProfile(null);
+
             const loadOtherProfile = async () => {
                 try {
                     const res = await execute('SELECT * FROM profiles WHERE id = ?', [profileId]);
