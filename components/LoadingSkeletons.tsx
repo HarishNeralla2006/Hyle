@@ -156,32 +156,45 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
 export const PostListSkeleton = ({ viewMode = 'gallery' }: { viewMode?: 'gallery' | 'discussion' }) => {
     return (
         <div className={`w-full ${viewMode === 'gallery' ? 'columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4' : 'max-w-2xl mx-auto space-y-6'}`}>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="break-inside-avoid mb-4">
-                    <div className="bg-[#111] rounded-3xl overflow-hidden border border-white/5 relative">
+                    <div className="bg-[#111] rounded-3xl overflow-hidden border border-white/5 relative group">
                         {/* Image Placeholder */}
                         <div className={`w-full relative ${viewMode === 'gallery' ? 'aspect-[3/4]' : 'aspect-video'}`}>
                             <ShimmerBlock className="absolute inset-0 opacity-20" />
-                        </div>
 
-                        {/* Content Placeholder */}
-                        <div className="p-4 space-y-3">
-                            <div className="flex justify-between items-start">
-                                <ShimmerBlock className="h-4 w-32 rounded" />
-                                <ShimmerBlock className="h-4 w-8 rounded-full" />
-                            </div>
-                            <ShimmerBlock className="h-3 w-full rounded opacity-50" />
-                            <ShimmerBlock className="h-3 w-2/3 rounded opacity-50" />
-
-                            {/* Action Bar */}
-                            <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/5">
-                                <div className="flex space-x-2">
-                                    <ShimmerBlock className="w-5 h-5 rounded-full" />
-                                    <ShimmerBlock className="w-5 h-5 rounded-full" />
+                            {/* Gallery Mode: Overlay Text Skeleton (Hidden by default, visible to mimic hover or just simple layout) */}
+                            {viewMode === 'gallery' && (
+                                <div className="absolute inset-0 flex flex-col justify-end p-4 space-y-2">
+                                    <ShimmerBlock className="h-4 w-3/4 rounded opacity-40" />
+                                    <div className="flex justify-between items-center">
+                                        <ShimmerBlock className="h-3 w-1/3 rounded opacity-30" />
+                                        <ShimmerBlock className="h-4 w-4 rounded-full opacity-30" />
+                                    </div>
                                 </div>
-                                <ShimmerBlock className="w-4 h-4 rounded" />
-                            </div>
+                            )}
                         </div>
+
+                        {/* Discussion Mode: Content Below */}
+                        {viewMode === 'discussion' && (
+                            <div className="p-4 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <ShimmerBlock className="h-4 w-32 rounded" />
+                                    <ShimmerBlock className="h-4 w-8 rounded-full" />
+                                </div>
+                                <ShimmerBlock className="h-3 w-full rounded opacity-50" />
+                                <ShimmerBlock className="h-3 w-2/3 rounded opacity-50" />
+
+                                {/* Action Bar */}
+                                <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/5">
+                                    <div className="flex space-x-2">
+                                        <ShimmerBlock className="w-5 h-5 rounded-full" />
+                                        <ShimmerBlock className="w-5 h-5 rounded-full" />
+                                    </div>
+                                    <ShimmerBlock className="w-4 h-4 rounded" />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             ))}
