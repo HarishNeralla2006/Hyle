@@ -8,6 +8,7 @@ import { HeartIcon, TrashIcon, BackIcon, CommentIcon, ReplyIcon, EditIcon } from
 import { RichTextRenderer } from './RichTextRenderer';
 import { normalizeSubTopic } from '../lib/normalization';
 import PostCard from './PostCard';
+import { PostListSkeleton } from './LoadingSkeletons';
 
 
 interface PostViewProps {
@@ -287,12 +288,8 @@ const PostView: React.FC<PostViewProps> = ({ domainId, domainName, setCurrentVie
             {/* Posts List */}
             <main className={`w-full ${viewMode === 'gallery' ? 'max-w-5xl px-2' : 'max-w-2xl px-4'} flex-1 overflow-y-auto pt-60 md:pt-44 pb-32 custom-scrollbar min-h-0 relative`}>
                 {isLoading && (
-                    <div className="flex flex-col items-center justify-center pt-32">
-                        <div className="relative w-16 h-16">
-                            <div className="absolute inset-0 border-4 border-[var(--primary-accent)]/20 rounded-full"></div>
-                            <div className="absolute inset-0 border-4 border-t-[var(--primary-accent)] rounded-full animate-spin"></div>
-                        </div>
-                        <p className="mt-6 text-[var(--primary-accent)] font-mono text-xs uppercase tracking-widest animate-pulse">Establishing Uplink...</p>
+                    <div className="pt-20 md:pt-10">
+                        <PostListSkeleton viewMode={viewMode} />
                     </div>
                 )}
 
