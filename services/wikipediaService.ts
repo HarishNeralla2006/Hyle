@@ -43,7 +43,7 @@ const isNonDomain = (page: WikiPage): boolean => {
     if (page.pageprops && page.pageprops.disambiguation !== undefined) return true;
 
     // 2. NSFW Filter
-    const nsfwTerms = ['porn', 'sex', 'xxx', 'nsfw', 'adult', 'erotic', 'nude', 'nudity', 'fetish', 'hentai'];
+    const nsfwTerms = ['porn', 'sex', 'xxx', 'nsfw', 'adult', 'erotic', 'nude', 'nudity', 'fetish', 'hentai', 'vagina', 'penis', 'genital', 'intercourse', 'incest'];
     if (nsfwTerms.some(term => title.includes(term))) return true;
 
     // 3. SEMANTIC DESCRIPTION FILTER (Intelligent)
@@ -62,7 +62,10 @@ const isNonDomain = (page: WikiPage): boolean => {
         'film', 'movie', 'album', 'song', 'single by', 'episode', 'series', 'telenovela',
 
         // Biographical indicators
-        'born', 'died', 'american', 'english', 'british', 'canadian', 'australian', 'indian' // e.g. "American actor"
+        'born', 'died', 'american', 'english', 'british', 'canadian', 'australian', 'indian', // e.g. "American actor"
+
+        // Biological/Medical specifics (User requested clean domains only)
+        'reproductive', 'insemination', 'genitalia'
     ];
 
     if (description) {
@@ -113,6 +116,7 @@ const HARDCODED_ALIASES: Record<string, string> = {
     "it": "Information technology",
     "swe": "Software engineering",
     "ds": "Data science",
+    "artificial": "Artificial intelligence",
 
     // User Requests
     "alias": "Pseudonym", // Explicit hardcode request
