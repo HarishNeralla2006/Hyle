@@ -64,8 +64,20 @@ const isNonDomain = (page: WikiPage): boolean => {
         // Biographical indicators
         'born', 'died', 'american', 'english', 'british', 'canadian', 'australian', 'indian', // e.g. "American actor"
 
-        // Biological/Medical specifics (User requested clean domains only)
-        'reproductive', 'insemination', 'genitalia'
+        // Biological/Medical specifics
+        'reproductive', 'insemination', 'genitalia',
+
+        // PHYSICAL OBJECTS / PRODUCTS / ARTIFACTS (Strict "No Objects" Rule)
+        'product', 'brand', 'company', 'corporation', 'manufacturer',
+        'device', 'tool', 'machine', 'appliance', 'instrument', 'gadget', 'hardware',
+        'vehicle', 'car', 'truck', 'aircraft', 'ship', 'boat', 'weapon', 'gun', 'rifle',
+        'toy', 'game', 'console', // e.g. "Video game console"
+        'clothing', 'garment', 'accessory', 'jewelry',
+        'furniture', 'utensil', 'container',
+        'building', 'structure', 'tower', 'bridge', // Architecture is a topic, specific buildings are objects
+        'material', 'substance', 'chemical', 'compound', // e.g. "Chemical compound"
+        'food', 'dish', 'drink', 'beverage', // e.g. "Pizza" is an object/food, not a domain
+        'plant', 'animal', 'bird', 'fish', 'insect', 'dog', 'cat' // Specific species are objects/entities
     ];
 
     if (description) {
