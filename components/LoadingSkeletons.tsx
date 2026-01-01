@@ -75,7 +75,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
             <div className="md:hidden w-full h-[40vh] relative">
                 <div className="absolute inset-0 z-0 bg-[#111] animate-pulse" />
                 {/* Top Nav Anchors */}
-                <div className="absolute top-8 left-6 right-6 flex justify-between z-10">
+                <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
                     <ShimmerBlock className="w-10 h-10 rounded-full bg-white/10" />
                     <ShimmerBlock className="w-10 h-10 rounded-full bg-white/10" />
                 </div>
@@ -116,7 +116,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
             </div>
 
             {/* Content Content (Shared with Mobile Adjustments) */}
-            <div className="md:hidden px-6 -mt-20 relative z-10 mb-8 flex flex-col">
+            <div className="md:hidden px-6 -mt-24 relative z-10 mb-8 flex flex-col">
                 <ShimmerBlock className="h-12 w-3/4 rounded-lg mb-2 bg-white/20" /> {/* Mobile Name */}
                 <ShimmerBlock className="h-4 w-1/3 rounded opacity-50 mb-6 bg-white/20" /> {/* Handle */}
 
@@ -130,7 +130,16 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
                 {/* Mobile "Update Identity" Button - Only for Own Profile */}
                 {isOwnProfile && <ShimmerBlock className="h-14 w-full rounded-full mb-6 bg-white/20" />}
 
-                <ShimmerBlock className="h-20 w-full rounded-xl" />
+                {/* Bio & Tags Area - mimic height of Headline + Bio + Tags */}
+                <div className="space-y-3 mb-2">
+                    <ShimmerBlock className="h-6 w-3/4 rounded bg-white/10" /> {/* Headline */}
+                    <ShimmerBlock className="h-4 w-full rounded opacity-60 bg-white/10" /> {/* Bio Line 1 */}
+                    <div className="flex space-x-2 pt-2">
+                        <ShimmerBlock className="h-8 w-20 rounded-full bg-white/10" /> {/* Tag 1 */}
+                        <ShimmerBlock className="h-8 w-24 rounded-full bg-white/10" /> {/* Tag 2 */}
+                        <ShimmerBlock className="h-8 w-16 rounded-full bg-white/10" /> {/* Tag 3 */}
+                    </div>
+                </div>
             </div>
 
             {/* Grid Skeleton */}
