@@ -136,9 +136,13 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
             {/* Grid Skeleton */}
             <div className="flex-1 w-full max-w-4xl mx-auto px-6 md:px-0 pb-20">
                 <div className="flex space-x-12 mb-8 justify-center md:justify-start">
-                    <ShimmerBlock className="w-6 h-6 rounded" />
-                    <ShimmerBlock className="w-6 h-6 rounded" />
-                    <ShimmerBlock className="w-6 h-6 rounded" />
+                    <ShimmerBlock className="w-6 h-6 rounded" /> {/* Posts Tab */}
+                    {isOwnProfile && (
+                        <>
+                            <ShimmerBlock className="w-6 h-6 rounded" /> {/* Likes Tab */}
+                            <ShimmerBlock className="w-6 h-6 rounded" /> {/* Saved Tab */}
+                        </>
+                    )}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                     {[1, 2, 3, 4, 5, 6].map(i => (
