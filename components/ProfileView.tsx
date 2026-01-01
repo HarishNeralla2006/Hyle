@@ -174,8 +174,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
         return null;
     };
 
+    const [isLoadingItems, setIsLoadingItems] = useState(false);
+
     const fetchItems = async () => {
         if (!profileId) return;
+        setIsLoadingItems(true);
         try {
             let result = [];
             if (activeTab === 'posts') {
@@ -199,6 +202,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
             }
             setItems(result);
         } catch (e) { console.error(e); }
+        finally { setIsLoadingItems(false); }
     };
 
     const fetchUserList = async (type: 'followers' | 'following') => {
@@ -295,7 +299,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
         // Explicitly handle all loading states with the Skeleton
         if (isAuthLoading) return <ProfileSkeleton isOwnProfile={false} />; // Auth loading, assume generic or default false
         if (!user && isOwnProfile) return <div className="p-4 flex flex-col items-center justify-center w-full h-full bg-[#050505] text-white"><AuthView /></div>;
-        if (!displayProfile) return <ProfileSkeleton isOwnProfile={!!isOwnProfile} />;
+        if (!displayProfile || isLoadingItems) return <ProfileSkeleton isOwnProfile={!!isOwnProfile} />;
 
         // If we have displayProfile, render the full view
         return (
