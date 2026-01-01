@@ -182,7 +182,12 @@ async function main() {
         const batch = TOPIC_REGISTRY.slice(i, i + BATCH_SIZE);
         console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(TOPIC_REGISTRY.length / BATCH_SIZE)}: [${batch.map(t => t.id).join(', ')}]`);
 
-        await Promise.all(batch.map(topic => processTopic(conn, topic, postsPerDomain)));
+        // Serialize requests to avoid Reddit 429 Rate Limits
+        for (const topic of batch) {
+            await processTopic(conn, topic, postsPerDomain);
+            // Politeness delay
+            await new Promise(r => setTimeout(r, 5000));
+        }
 
         // Small breather
         await new Promise(r => setTimeout(r, 1500));
@@ -227,12 +232,12 @@ async function processTopic(conn: any, topic: { id: string, subreddits: string[]
 
     try {
         const fetchLimit = limit + 15;
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/${mode}.json?t=${timeRange}&limit=${fetchLimit}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hyle/1.0' }
+        const response = await fetch(`https://old.reddit.com/r/${subreddit}/${mode}.json?t=${timeRange}&limit=${fetchLimit}`, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
         });
 
         if (!response.ok) {
-            console.log(`   ⚠️ Failed to fetch from r/${subreddit}`);
+            console.log(`   ⚠️ Failed to fetch from r/${subreddit}: ${response.status} ${response.statusText}`);
             return;
         }
 
@@ -294,14 +299,14 @@ async function processTopic(conn: any, topic: { id: string, subreddits: string[]
                     VALUES (?, ?, ?, ?, ?, NOW())
                 `, [postId, randomHuman.id, domainId, finalContent, imageUrl]);
 
-                // console.log(`   -> Inserted: ${postId}`);
+                console.log(`   -> Inserted: ${postId}`);
                 successCount++;
             } catch (err: any) {
                 // Ignore duplicates
             }
         }
         if (successCount > 0) {
-            // console.log(`   ✅ Seeded ${successCount} posts for ${domainId}`);
+            console.log(`   ✅ Seeded ${successCount} posts for ${domainId}`);
         }
     } catch (e: any) {
         console.error(`   ❌ Error processing ${domainId}:`, e.message);
