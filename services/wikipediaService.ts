@@ -2,6 +2,7 @@
 // Wikipedia OpenSearch Service
 // Provides "Smart Suggestions" by mapping slang/typos to canonical Wikipedia titles.
 // 100% Free, No Auth, High Reliability.
+// Last Verified: 2026-01-01
 
 const WIKI_API_URL = "https://en.wikipedia.org/w/api.php";
 
