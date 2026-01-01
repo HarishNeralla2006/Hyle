@@ -97,11 +97,11 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
                             {/* Action Buttons */}
                             <div className="flex space-x-3">
                                 {isOwnProfile ? (
-                                    <ShimmerBlock className="h-10 w-10 rounded-xl" /> // Settings Button
+                                    <ShimmerBlock className="h-10 w-10 rounded-xl" />
                                 ) : (
                                     <>
-                                        <ShimmerBlock className="h-10 w-24 rounded-xl" /> // Follow
-                                        <ShimmerBlock className="h-10 w-24 rounded-xl" /> // Message
+                                        <ShimmerBlock className="h-10 w-24 rounded-xl" />
+                                        <ShimmerBlock className="h-10 w-24 rounded-xl" />
                                     </>
                                 )}
                             </div>
