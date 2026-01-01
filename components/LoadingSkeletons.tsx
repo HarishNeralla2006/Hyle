@@ -72,7 +72,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
     return (
         <div className="w-full h-full flex flex-col bg-[#050505] relative overflow-hidden">
             {/* Mobile Cover Skeleton */}
-            <div className="md:hidden w-full h-[40vh] relative">
+            <div className="md:hidden w-full h-[40vh] relative mb-8">
                 <div className="absolute inset-0 z-0 bg-[#111] animate-pulse" />
                 {/* Top Nav Anchors */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
