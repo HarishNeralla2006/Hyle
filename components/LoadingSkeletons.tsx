@@ -68,7 +68,7 @@ export const ChatSkeleton = () => {
 };
 
 // --- PROFILE SKELETON ---
-export const ProfileSkeleton = () => {
+export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boolean }) => {
     return (
         <div className="w-full h-full flex flex-col bg-[#050505] relative overflow-hidden">
             {/* Mobile Cover Skeleton */}
@@ -94,9 +94,16 @@ export const ProfileSkeleton = () => {
                                 </div>
                                 <ShimmerBlock className="h-4 w-64 rounded opacity-50" />
                             </div>
+                            {/* Action Buttons */}
                             <div className="flex space-x-3">
-                                <ShimmerBlock className="h-10 w-24 rounded-xl" />
-                                <ShimmerBlock className="h-10 w-24 rounded-xl" />
+                                {isOwnProfile ? (
+                                    <ShimmerBlock className="h-10 w-10 rounded-xl" /> // Settings Button
+                                ) : (
+                                    <>
+                                        <ShimmerBlock className="h-10 w-24 rounded-xl" /> // Follow
+                                        <ShimmerBlock className="h-10 w-24 rounded-xl" /> // Message
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="flex space-x-12">
@@ -120,8 +127,8 @@ export const ProfileSkeleton = () => {
                     <div className="flex flex-col items-center gap-1"><ShimmerBlock className="h-6 w-8" /><ShimmerBlock className="h-2 w-10 opacity-50" /></div>
                 </div>
 
-                {/* Mobile "Update Identity" Button */}
-                <ShimmerBlock className="h-14 w-full rounded-2xl mb-6" />
+                {/* Mobile "Update Identity" Button - Only for Own Profile */}
+                {isOwnProfile && <ShimmerBlock className="h-14 w-full rounded-2xl mb-6" />}
 
                 <ShimmerBlock className="h-20 w-full rounded-xl" />
             </div>

@@ -293,9 +293,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
 
     const renderInnerContent = () => {
         // Explicitly handle all loading states with the Skeleton
-        if (isAuthLoading) return <ProfileSkeleton />;
+        if (isAuthLoading) return <ProfileSkeleton isOwnProfile={false} />; // Auth loading, assume generic or default false
         if (!user && isOwnProfile) return <div className="p-4 flex flex-col items-center justify-center w-full h-full bg-[#050505] text-white"><AuthView /></div>;
-        if (!displayProfile) return <ProfileSkeleton />;
+        if (!displayProfile) return <ProfileSkeleton isOwnProfile={isOwnProfile} />;
 
         // If we have displayProfile, render the full view
         return (
