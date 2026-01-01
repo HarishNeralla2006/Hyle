@@ -75,7 +75,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
             <div className="md:hidden w-full h-[40vh] relative">
                 <div className="absolute inset-0 z-0 bg-[#111] animate-pulse" />
                 {/* Top Nav Anchors */}
-                <div className="absolute top-6 left-6 right-6 flex justify-between z-10">
+                <div className="absolute top-8 left-6 right-6 flex justify-between z-10">
                     <ShimmerBlock className="w-10 h-10 rounded-full bg-white/10" />
                     <ShimmerBlock className="w-10 h-10 rounded-full bg-white/10" />
                 </div>
@@ -116,7 +116,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
             </div>
 
             {/* Content Content (Shared with Mobile Adjustments) */}
-            <div className="md:hidden px-6 -mt-24 relative z-10 mb-8 flex flex-col">
+            <div className="md:hidden px-6 -mt-20 relative z-10 mb-8 flex flex-col">
                 <ShimmerBlock className="h-12 w-3/4 rounded-lg mb-2 bg-white/20" /> {/* Mobile Name */}
                 <ShimmerBlock className="h-4 w-1/3 rounded opacity-50 mb-6 bg-white/20" /> {/* Handle */}
 
