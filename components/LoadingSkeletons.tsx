@@ -73,30 +73,30 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
         <div className="w-full h-full flex flex-col bg-[#050505] relative overflow-hidden">
             {/* Mobile Cover Skeleton */}
             <div className="md:hidden w-full h-[40vh] relative mb-6">
-                <ShimmerBlock className="absolute inset-0 z-0 bg-white/5" />
+                <div className="absolute inset-0 z-0 bg-[#111] animate-pulse" />
             </div>
 
             {/* Desktop Header Skeleton */}
             <div className="hidden md:flex flex-col items-center w-full pt-16 px-6 pb-6">
                 <div className="w-full max-w-4xl border border-white/10 rounded-[2.5rem] p-10 flex items-start space-x-10 relative overflow-hidden bg-[#0f0f11]">
-                    <ShimmerBlock className="w-40 h-40 rounded-[2rem] shrink-0" />
+                    <ShimmerBlock className="w-40 h-40 rounded-[2rem] shrink-0 bg-[#111]" />
                     <div className="flex-1 space-y-6 pt-2">
                         <div className="flex justify-between items-start">
                             <div className="space-y-3">
                                 <div className="flex items-center space-x-3">
-                                    <ShimmerBlock className="h-10 w-48 rounded-lg" /> {/* Username */}
-                                    <ShimmerBlock className="h-5 w-12 rounded" />     {/* PRO Badge */}
+                                    <ShimmerBlock className="h-10 w-48 rounded-lg bg-white/10" /> {/* Username */}
+                                    <ShimmerBlock className="h-5 w-12 rounded bg-white/10" />     {/* PRO Badge */}
                                 </div>
-                                <ShimmerBlock className="h-4 w-64 rounded opacity-50" />
+                                <ShimmerBlock className="h-4 w-64 rounded opacity-50 bg-white/10" />
                             </div>
                             {/* Action Buttons */}
                             <div className="flex space-x-3">
                                 {isOwnProfile ? (
-                                    <ShimmerBlock className="h-10 w-10 rounded-xl" />
+                                    <ShimmerBlock className="h-10 w-10 rounded-xl bg-white/10" />
                                 ) : (
                                     <>
-                                        <ShimmerBlock className="h-10 w-24 rounded-xl" />
-                                        <ShimmerBlock className="h-10 w-24 rounded-xl" />
+                                        <ShimmerBlock className="h-10 w-24 rounded-xl bg-white/10" />
+                                        <ShimmerBlock className="h-10 w-24 rounded-xl bg-white/10" />
                                     </>
                                 )}
                             </div>
@@ -112,8 +112,8 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
 
             {/* Content Content (Shared with Mobile Adjustments) */}
             <div className="md:hidden px-6 -mt-24 relative z-10 mb-8 flex flex-col">
-                <ShimmerBlock className="h-12 w-3/4 rounded-lg mb-2" /> {/* Mobile Name */}
-                <ShimmerBlock className="h-4 w-1/3 rounded opacity-50 mb-6" /> {/* Handle */}
+                <ShimmerBlock className="h-12 w-3/4 rounded-lg mb-2 bg-white/10" /> {/* Mobile Name */}
+                <ShimmerBlock className="h-4 w-1/3 rounded opacity-50 mb-6 bg-white/10" /> {/* Handle */}
 
                 {/* Mobile Stats */}
                 <div className="flex justify-between w-full pr-4 mb-6">
