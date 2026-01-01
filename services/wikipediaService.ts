@@ -156,7 +156,27 @@ export const getSmartSuggestions = async (query: string): Promise<string[]> => {
             // Deduplicate (Case-insensitive)
             .filter((label, index, self) =>
                 index === self.findIndex(t => t.toLowerCase() === label.toLowerCase())
-            );
+            )
+            // 6. RANKING: Prioritize "Starts With" to match user typing
+            .sort((a, b) => {
+                const lowerQuery = term.toLowerCase(); // Use the resolved term (aliases applied)
+                const lowerA = a.toLowerCase();
+                const lowerB = b.toLowerCase();
+
+                // 1. Exact Match gets top priority
+                if (lowerA === lowerQuery && lowerB !== lowerQuery) return -1;
+                if (lowerB === lowerQuery && lowerA !== lowerQuery) return 1;
+
+                // 2. Starts With Query (Prefix)
+                const aStarts = lowerA.startsWith(lowerQuery);
+                const bStarts = lowerB.startsWith(lowerQuery);
+
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+
+                // 3. Length (Shorter is usually more "broad/canonical")
+                return lowerA.length - lowerB.length;
+            });
 
         // 6. Limit to top 4 relevant results
         const finalSuggestions = validSuggestions.slice(0, 4);
