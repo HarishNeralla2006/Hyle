@@ -289,6 +289,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
     const bioDetails = profileBioParts.slice(1);
 
     const renderInnerContent = () => {
+        // Explicitly handle all loading states with the Skeleton
         if (isAuthLoading) return <ProfileSkeleton />;
         if (!user && isOwnProfile) return <div className="p-4 flex flex-col items-center justify-center w-full h-full bg-[#050505] text-white"><AuthView /></div>;
         if (!displayProfile) return <ProfileSkeleton />;

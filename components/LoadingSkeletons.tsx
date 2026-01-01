@@ -74,7 +74,8 @@ export const ProfileSkeleton = () => {
             {/* Mobile Cover Skeleton */}
             <div className="md:hidden w-full h-[40vh] relative mb-6">
                 <ShimmerBlock className="absolute inset-0 z-0 bg-white/5" />
-                <div className="absolute top-6 left-6 right-6 flex justify-between">
+                {/* Simulated Top Nav */}
+                <div className="absolute top-6 left-6 right-6 flex justify-between z-10">
                     <ShimmerBlock className="w-8 h-8 rounded-full" />
                     <ShimmerBlock className="w-16 h-8 rounded-full" />
                 </div>
