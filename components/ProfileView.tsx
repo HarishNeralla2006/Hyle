@@ -6,6 +6,7 @@ import AuthView from './AuthView';
 import { BackIcon, EditIcon, HeartIcon, SettingsIcon, CloseIcon, GridIcon, BookmarkIcon, ProfileIcon, PlusCircleIcon } from './icons';
 import { useStatus } from '../contexts/StatusContext';
 import { ViewState, ViewType, ProfileTab, Profile, PostWithAuthorAndLikes } from '../types';
+import { ProfileSkeleton } from './LoadingSkeletons';
 
 interface ProfileViewProps {
     setCurrentView: (view: ViewState) => void;
@@ -281,9 +282,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ setCurrentView, initialTab = 
     };
 
 
-    if (isAuthLoading) return <LoadingSpinner />;
+    if (isAuthLoading) return <ProfileSkeleton />;
     if (!user && isOwnProfile) return <div className="p-4 flex flex-col items-center justify-center"><AuthView /></div>;
-    if (!displayProfile) return <div className="p-8 text-center text-white">Loading...</div>;
+    if (!displayProfile) return <ProfileSkeleton />;
 
 
     // --- RENDERING ---

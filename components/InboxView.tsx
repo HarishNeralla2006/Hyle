@@ -3,6 +3,7 @@ import { execute } from '../lib/tidbClient';
 import { useAuth } from '../contexts/AuthContext';
 import { ViewState, ViewType, ChatSession } from '../types';
 import { ProfileIcon, SearchIcon, PlusCircleIcon, CloseIcon } from './icons';
+import { InboxSkeleton } from './LoadingSkeletons';
 
 interface InboxViewProps {
     setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>;
@@ -105,7 +106,7 @@ OR(f.follower_id = p.id AND f.following_id = ?)
         }
     };
 
-    if (loading) return <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-indigo-500 rounded-full animate-spin"></div></div>;
+    if (loading) return <InboxSkeleton />;
 
     return (
         <div className="flex flex-col h-full bg-[var(--bg-color)] text-[var(--text-color)]">

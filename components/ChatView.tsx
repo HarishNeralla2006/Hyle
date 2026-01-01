@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ViewState, ViewType, ChatMessage, Profile } from '../types';
 import { BackIcon, SendIcon } from './icons';
 import { useStatus } from '../contexts/StatusContext';
+import { ChatSkeleton } from './LoadingSkeletons';
 
 interface ChatViewProps {
     chatId: string;
@@ -19,11 +20,13 @@ const ChatView: React.FC<ChatViewProps> = ({ chatId, otherUserId, setCurrentView
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [otherProfile, setOtherProfile] = useState<Profile | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Fetch other user profile and my status
         const fetchContext = async () => {
+            setIsLoading(true);
             try {
                 const profileRes = await execute('SELECT * FROM profiles WHERE id = ?', [otherUserId]);
                 if (profileRes.length > 0) {
@@ -45,6 +48,8 @@ const ChatView: React.FC<ChatViewProps> = ({ chatId, otherUserId, setCurrentView
                 }
             } catch (e) {
                 console.error("Failed to fetch chat context", e);
+            } finally {
+                setIsLoading(false);
             }
         }
         fetchContext();
@@ -146,6 +151,8 @@ const ChatView: React.FC<ChatViewProps> = ({ chatId, otherUserId, setCurrentView
             setCurrentView({ type: ViewType.Explore }); // Exit
         } catch (e) { setError("Failed to block."); }
     };
+
+    if (isLoading && !otherProfile) return <ChatSkeleton />;
 
     return (
         <div className="w-full h-full flex flex-col bg-[var(--bg-color)] relative z-0">
