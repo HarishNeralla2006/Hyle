@@ -72,8 +72,13 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
     return (
         <div className="w-full h-full flex flex-col bg-[#050505] relative overflow-hidden">
             {/* Mobile Cover Skeleton */}
-            <div className="md:hidden w-full h-[40vh] relative mb-6">
+            <div className="md:hidden w-full h-[40vh] relative">
                 <div className="absolute inset-0 z-0 bg-[#111] animate-pulse" />
+                {/* Top Nav Anchors */}
+                <div className="absolute top-6 left-6 right-6 flex justify-between z-10">
+                    <ShimmerBlock className="w-10 h-10 rounded-full bg-white/10" />
+                    <ShimmerBlock className="w-10 h-10 rounded-full bg-white/10" />
+                </div>
             </div>
 
             {/* Desktop Header Skeleton */}
@@ -123,7 +128,7 @@ export const ProfileSkeleton = ({ isOwnProfile = false }: { isOwnProfile?: boole
                 </div>
 
                 {/* Mobile "Update Identity" Button - Only for Own Profile */}
-                {isOwnProfile && <ShimmerBlock className="h-14 w-full rounded-2xl mb-6 bg-white/20" />}
+                {isOwnProfile && <ShimmerBlock className="h-14 w-full rounded-full mb-6 bg-white/20" />}
 
                 <ShimmerBlock className="h-20 w-full rounded-xl" />
             </div>
