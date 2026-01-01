@@ -109,6 +109,10 @@ const HARDCODED_ALIASES: Record<string, string> = {
     "llm": "Large language model",
     "nlp": "Natural language processing",
     "saas": "Software as a service",
+    "cs": "Computer science",
+    "it": "Information technology",
+    "swe": "Software engineering",
+    "ds": "Data science",
 
     // User Requests
     "alias": "Pseudonym", // Explicit hardcode request
