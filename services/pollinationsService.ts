@@ -85,19 +85,61 @@ const cleanTextResponse = (text: string, parentDomain: string): string[] => {
         .slice(0, 10);
 };
 
+const POLLINATIONS_API_KEY = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY || 'sk_TyClYPBfkPtYjCp0jvYQdF9llmBgwCp2';
+const BASE_URL = 'https://gen.pollinations.ai';
+
 // Pollinations.AI Text Generation
-// Uses standard GET request structure: https://text.pollinations.ai/{prompt}?model=openai&system={system}&seed={seed}
+// Uses OpenAI-compatible chat completions endpoint (POST /v1/chat/completions) with fallback to GET /text/{prompt}
 const fetchPollinations = async (prompt: string, system: string, seed?: number): Promise<string> => {
+    try {
+        const messages = [
+            { role: 'system', content: system },
+            { role: 'user', content: prompt }
+        ];
+
+        const body: Record<string, any> = {
+            model: 'openai',
+            messages,
+        };
+
+        if (seed !== undefined) {
+            body.seed = seed;
+        }
+
+        const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${POLLINATIONS_API_KEY}`,
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content;
+            if (content) {
+                return content;
+            }
+        }
+    } catch (e) {
+        console.warn('Pollinations chat completions request failed, falling back to GET /text:', e);
+    }
+
+    // Fallback: GET /text/{prompt}
     const encodedPrompt = encodeURIComponent(prompt);
     const encodedSystem = encodeURIComponent(system);
-    // 'openai' model is generally reliable for following instructions
-    let url = `https://text.pollinations.ai/${encodedPrompt}?model=openai&system=${encodedSystem}`;
+    let url = `${BASE_URL}/text/${encodedPrompt}?model=openai&system=${encodedSystem}`;
 
     if (seed !== undefined) {
         url += `&seed=${seed}`;
     }
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${POLLINATIONS_API_KEY}`,
+        },
+    });
 
     if (!response.ok) {
         throw new Error(`Pollinations API Error: ${response.status} ${response.statusText}`);
